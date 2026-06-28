@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ভূত Letter Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ECF1FB;
+            height: 100%;
+            height: 100dvh; 
+            width: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- EFFECTS LAYER --- */
+        #effects-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #effects-layer.red-smog {
+            background: radial-gradient(circle at center, rgba(255, 0, 0, 0.1) 0%, rgba(255, 0, 0, 0.4) 90%);
+            opacity: 1;
+            animation: pulse-red 2s infinite ease-in-out;
+        }
+
+        #effects-layer.blue-smog {
+            background: radial-gradient(circle at center, rgba(0, 191, 255, 0.1) 0%, rgba(0, 191, 255, 0.4) 90%);
+            opacity: 1;
+            animation: pulse-blue 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-red {
+            0% { opacity: 0.5; background-size: 100% 100%; }
+            50% { opacity: 1; background-size: 110% 110%; }
+            100% { opacity: 0.5; background-size: 100% 100%; }
+        }
+
+        @keyframes pulse-blue {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .flower {
+            position: absolute;
+            font-size: 2.5rem;
+            z-index: 51;
+            animation: flower-fall 2.5s linear forwards;
+            top: -10%;
+        }
+
+        @keyframes flower-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- TOP BAR --- */
+        #top-bar {
+            width: 100%;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-bottom: 2px solid #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            min-height: 90px;
+            padding-top: max(15px, env(safe-area-inset-top));
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        #letter-list {
+            display: flex;
+            gap: 15px;
+            list-style: none;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            transition: padding-right 0.3s;
+        }
+
+        body.mode-fish #letter-list {
+            padding-right: 0;
+        }
+
+        .letter-item {
+            font-size: 2.2rem;
+            padding: 10px 15px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            cursor: pointer;
+            min-width: 80px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-weight: bold;
+            color: #333;
+            transition: transform 0.1s, background-color 0.2s;
+            position: relative;
+            z-index: 2; 
+        }
+
+        .letter-item:active {
+            transform: scale(0.95);
+            background-color: #f0f0f0;
+        }
+
+        /* Fish Mode Buttons */
+        .fish-control-btn {
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        
+        .fish-control-btn.plus { background: #2196F3; }
+        .fish-control-btn.minus { background: #F44336; }
+        .fish-control-btn.check { background: #4CAF50; }
+
+        .fish-control-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Corner Buttons (Count & Check) */
+        .corner-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-top: calc(max(15px, env(safe-area-inset-top)) / 2 * 0);
+            z-index: 30;
+            display: none; /* Flex when active */
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        /* Fish Count Speaker Button (Right) */
+        #fish-count-btn {
+            right: 15px;
+            background: #9C27B0;
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+            padding: 0;
+        }
+
+        #fish-count-btn:active {
+            transform: translateY(-50%) scale(0.95);
+            background: #7B1FA2;
+        }
+
+        #fish-count-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+            display: block;
+        }
+
+        /* Check Button (Left) */
+        #fish-check-btn {
+            left: 15px;
+        }
+
+        .flying-letter {
+            position: fixed;
+            font-size: 2.2rem;
+            padding: 10px 15px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* --- MIDDLE AREA --- */
+        #game-area {
+            flex-grow: 1;
+            position: relative;
+            width: 100%;
+            background-color: #ECF1FB;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            background-image: 
+                linear-gradient(rgba(0, 0, 0, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.15) 1px, transparent 1px);
+            background-size: 11px 11px;
+            background-position: 0 0;
+            overflow: hidden;
+        }
+
+        #fish-tank {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4; 
+        }
+
+        .fish-item {
+            position: absolute;
+            font-size: 2.5rem;
+            animation: fish-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.5s ease-in-out;
+            transform-origin: center center;
+        }
+
+        @keyframes fish-pop {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        #totodile-container {
+            width: 250px;
+            height: 250px;
+            position: relative;
+            bottom: -10px;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        #totodile-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: transparent;
+        }
+
+        #video-placeholder {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #888;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.5);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        /* --- GRASS GROUND --- */
+        #ground {
+            width: 100%;
+            height: auto; 
+            min-height: 140px;
+            background-color: #4CAF50;
+            border-top: 6px solid #388E3C;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-shrink: 0; 
+            padding-left: 20px;
+            padding-right: 20px;
+            padding-top: 20px;
+            padding-bottom: calc(env(safe-area-inset-bottom) + 30px);
+        }
+
+        .control-btn {
+            background: #fff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+            flex-shrink: 0; 
+            position: relative;
+            border: none;
+            outline: none;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        #refresh-btn { border: 2px solid #388E3C; }
+        #refresh-btn svg { width: 28px; height: 28px; fill: #388E3C; }
+
+        #play-btn {
+            border: 4px solid #FF9800;
+            width: 65px;
+            height: 65px;
+            z-index: 2; 
+            overflow: hidden;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #d32f2f;
+        }
+        #play-btn svg { width: 35px; height: 35px; fill: #FF9800; margin-left: 4px; transition: opacity 0.2s; }
+
+        #play-hint {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            color: #d32f2f;
+            font-size: 2rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            display: none;
+            z-index: 5;
+        }
+
+        /* Settings / Gear Button */
+        #settings-btn {
+            border: 2px solid #546E7A;
+            z-index: 65;
+            background: #fff;
+        }
+        
+        #settings-btn svg {
+            width: 30px;
+            height: 30px;
+            fill: #546E7A;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        #settings-btn.open svg {
+            transform: rotate(90deg);
+        }
+
+        /* Settings Menu Popover */
+        #settings-menu {
+            position: absolute;
+            bottom: calc(140px + env(safe-area-inset-bottom)); 
+            right: 15px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 60;
+            min-width: 220px;
+            border: 1px solid #ddd;
+            animation: popUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popUp {
+            from { opacity: 0; transform: translateY(10px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .menu-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .menu-label {
+            font-size: 0.85rem;
+            color: #777;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .menu-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .menu-mode-btn {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #ccc;
+            background: #f9f9f9;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .menu-mode-btn.active {
+            background: #E3F2FD;
+            border-color: #2196F3;
+            color: #1565C0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .menu-mode-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #2196F3;
+            border-radius: 50%;
+        }
+
+        .menu-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #333;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .menu-input:focus {
+            border-color: #2196F3;
+        }
+
+        @media (max-width: 480px) {
+            .letter-item { font-size: 1.8rem; padding: 12px 5px; flex: 1; min-width: 0; }
+            #letter-list { gap: 12px; }
+            #ground { padding-left: 15px; padding-right: 15px; }
+            #totodile-container { width: 200px; height: 200px; }
+            .control-btn { width: 45px; height: 45px; }
+            #play-btn { width: 65px; height: 65px; } 
+            
+            #top-bar {
+                padding-top: max(10px, env(safe-area-inset-top));
+            }
+            #fish-count-btn {
+                width: 45px;
+                height: 45px;
+                right: 10px;
+                display: block;
+            }
+            #fish-check-btn {
+                width: 45px;
+                height: 45px;
+                left: 10px;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="effects-layer"></div>
+
+    <div id="top-bar">
+        <!-- Location for Check Button (Left) -->
+        <button id="fish-check-btn" class="fish-control-btn check corner-btn" onclick="handleCheckButton()" title="Check Answer">
+            ✓
+        </button>
+
+        <!-- Fish Count Speaker Button (Right) -->
+        <button id="fish-count-btn" class="corner-btn" onclick="speakFishCount()" title="Count fishes">
+            <svg viewBox="0 0 24 24">
+               <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/>
+            </svg>
+        </button>
+
+        <!-- Center List (Letters or +/-) -->
+        <ul id="letter-list"></ul>
+    </div>
+
+    <div id="game-area">
+        <div id="fish-tank"></div> 
+        <div id="totodile-container">
+            <video id="totodile-video" playsinline></video>
+            <div id="video-placeholder">No video</div>
+        </div>
+    </div>
+
+    <div id="settings-menu">
+        <div class="menu-section">
+            <span class="menu-label">Character Name</span>
+            <input type="text" id="character-name-input" class="menu-input" value="ভূত" oninput="handleNameChange(this.value)" placeholder="Enter name">
+        </div>
+
+        <div class="menu-section">
+            <span class="menu-label">Active Modes</span>
+            <div class="menu-row">
+                <div id="menu-mode-en" class="menu-mode-btn" onclick="toggleMode('en')">E</div>
+                <div id="menu-mode-bn" class="menu-mode-btn" onclick="toggleMode('bn')">ব</div>
+                <div id="menu-mode-fish" class="menu-mode-btn" onclick="toggleMode('fish')">🐟</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ground">
+        <button id="refresh-btn" class="control-btn" onclick="manualRefresh()">
+            <svg viewBox="0 0 24 24">
+                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+        </button>
+
+        <button id="play-btn" class="control-btn" onclick="speakPrompt()">
+            <svg id="play-icon-svg" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+            <div id="play-hint"></div>
+        </button>
+
+        <button id="settings-btn" class="control-btn" onclick="toggleSettings()">
+            <svg viewBox="0 0 24 24">
+                <path d="M19.43,12.98C19.47,12.66 19.5,12.34 19.5,12C19.5,11.66 19.47,11.34 19.43,11.02L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.97 19.05,5.05L16.56,6.05C16.04,5.65 15.48,5.32 14.87,5.07L14.49,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.51,2.42L9.13,5.07C8.52,5.32 7.96,5.65 7.44,6.05L4.95,5.05C4.73,4.97 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11.02C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.66 4.57,12.98L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.95C7.96,18.35 8.52,18.68 9.13,18.93L9.51,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.49,21.58L14.87,18.93C15.48,18.68 16.04,18.35 16.56,17.95L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.98Z M12,15.5C10.07,15.5 8.5,13.93 8.5,12C8.5,10.07 10.07,8.5 12,8.5C13.93,8.5 15.5,10.07 15.5,12C15.5,13.93 13.93,15.5 12,15.5Z"/>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        const bengaliData = {
+            'অ': 'অ', 'আ': 'আ', 'ই': 'হ্রস্ব ই', 'ঈ': 'দীর্ঘ ই', 'উ': 'হ্রস্ব উ', 
+            'ঊ': 'দীর্ঘ উ', 'ঋ': 'ঋ', 'এ': 'এ', 'ঐ': 'ঐ', 'ও': 'ও', 'ঔ': 'ঔ',
+            'ক': 'ক', 'খ': 'খ', 'গ': 'গ', 'ঘ': 'ঘ', 'ঙ': 'উঙ',
+            'চ': 'চ', 'ছ': 'ছ', 'জ': 'বর্গীয় জ', 'ঝ': 'ঝ', 'ঞ': 'ইঞ',
+            'ট': 'ট', 'ঠ': 'ঠ', 'ড': 'ড', 'ঢ': 'ঢ', 'ণ': 'মূর্ধন্য ণ',
+            'ত': 'ত', 'থ': 'থ', 'দ': 'দ', 'ধ': 'ধ', 'ন': 'দন্ত্য ন',
+            'প': 'প', 'ফ': 'ফ', 'ব': 'ব', 'ভ': 'ভ', 'ম': 'ম',
+            'য': 'অন্তস্থ য', 'র': 'র', 'ল': 'ল', 'শ': 'তালব্য শ', 'ষ': 'মূর্ধন্য ষ',
+            'স': 'দন্ত্য স', 'হ': 'হ', 'ড়': 'ড-এ শূন্য ড়', 'ঢ়': 'ঢ-এ শূন্য ঢ়',
+            'য়': 'অন্তস্থ য়', 'ৎ': 'খণ্ড ত', 'ং': 'অনুস্বার', 'ঃ': 'বিসর্গ', 'ঁ': 'চন্দ্রবিন্দু',
+            '১': 'এক', '২': 'দুই', '৩': 'তিন', '৪': 'চার', '৫': 'পাঁচ',
+            '৬': 'ছয়', '৭': 'সাত', '৮': 'আট', '৯': 'নয়', '১০': 'দশ'
+        };
+
+        const englishData = {};
+        for (let i = 65; i <= 90; i++) {
+            const char = String.fromCharCode(i);
+            englishData[char] = char; 
+        }
+        englishData['1'] = 'ওয়ান'; englishData['2'] = 'টু'; englishData['3'] = 'থ্রি';
+        englishData['4'] = 'ফোর'; englishData['5'] = 'ফাইভ'; englishData['6'] = 'সিক্স';
+        englishData['7'] = 'সেভেন'; englishData['8'] = 'এইট'; englishData['9'] = 'নাইন';
+        englishData['10'] = 'টেন';
+
+        const fishData = {
+            '১': 'এক', '২': 'দুই', '৩': 'তিন', '৪': 'চার', '৫': 'পাঁচ',
+            '৬': 'ছয়', '৭': 'সাত', '৮': 'আট', '৯': 'নয়', '১০': 'দশ'
+        };
+
+        const bengaliToNum = {
+            '১': 1, '২': 2, '৩': 3, '৪': 4, '৫': 5,
+            '৬': 6, '৭': 7, '৮': 8, '৯': 9, '১০': 10
+        };
+
+        const numToBengaliWord = {
+            0: 'শূণ্য', 1: 'এক', 2: 'দুই', 3: 'তিন', 4: 'চার', 5: 'পাঁচ',
+            6: 'ছয়', 7: 'সাত', 8: 'আট', 9: 'নয়', 10: 'দশ', 11: 'এগারো'
+        };
+
+        // --- STATE ---
+        let activeModes = ['en', 'bn', 'fish']; // Default to all
+        let currentModeSequenceIndex = 0; 
+        let currentMode = 'bn'; 
+        let characterName = localStorage.getItem('characterName') || 'ভূত'; // Load persistent custom name on load, fallback to 'ভূত'
+
+        let currentDataset = bengaliData;
+        let currentLetters = Object.keys(bengaliData);
+
+        let currentLetter = '';
+        let displayList = [];
+        let isAnimating = false;
+        let successCount = 0;
+        let wrongAttempts = 0; 
+        const TARGET_WINS = 3; // Swaps modes automatically after exactly 3 wins
+        let currentUtterance = null;
+        let fishCount = 0;
+        let animTimeouts = []; 
+        
+        const videoElement = document.getElementById('totodile-video');
+        
+        // Preloaded videos inside videos/ path
+        const videos = { 
+            hungry: 'videos/hungry.mp4', 
+            happy: 'videos/happy.mp4', 
+            angry: 'videos/angry.mp4'
+        };
+
+        function toggleSettings() {
+            const menu = document.getElementById('settings-menu');
+            const btn = document.getElementById('settings-btn');
+            
+            if (menu.style.display === 'flex') {
+                menu.style.display = 'none';
+                btn.classList.remove('open');
+            } else {
+                menu.style.display = 'flex';
+                btn.classList.add('open');
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('settings-menu');
+            const btn = document.getElementById('settings-btn');
+            if (menu.style.display === 'flex' && !menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.style.display = 'none';
+                btn.classList.remove('open');
+            }
+        });
+
+        // Handle dynamic character name input
+        function handleNameChange(newName) {
+            const trimmed = newName.trim();
+            characterName = trimmed !== '' ? trimmed : 'ভূত';
+            localStorage.setItem('characterName', characterName); // Persist name in browser local storage
+            document.title = `${characterName} Letter Game`;
+        }
+
+        function toggleMode(mode) {
+            if (isAnimating) return;
+
+            const index = activeModes.indexOf(mode);
+            if (index > -1) {
+                if (activeModes.length > 1) {
+                    activeModes.splice(index, 1);
+                } else {
+                    return; 
+                }
+            } else {
+                activeModes.push(mode);
+            }
+
+            // Normalize sequence index range to avoid array out-of-bounds
+            currentModeSequenceIndex = currentModeSequenceIndex % activeModes.length;
+
+            updateSettingsUI();
+            
+            if (!activeModes.includes(currentMode)) {
+                init();
+            }
+        }
+        
+        function updateSettingsUI() {
+            document.querySelectorAll('.menu-mode-btn').forEach(btn => btn.classList.remove('active'));
+            activeModes.forEach(mode => {
+                document.getElementById('menu-mode-' + mode).classList.add('active');
+            });
+        }
+
+        function determineModeForRound() {
+            if (activeModes.length === 0) activeModes = ['bn']; 
+            
+            // Access the mode at current pointer
+            const nextMode = activeModes[currentModeSequenceIndex];
+            setRoundMode(nextMode);
+            
+            // Move pointer forward for the next iteration swap
+            currentModeSequenceIndex = (currentModeSequenceIndex + 1) % activeModes.length;
+        }
+
+        function setRoundMode(mode) {
+            currentMode = mode;
+            
+            if (mode === 'en') {
+                currentDataset = englishData;
+                currentLetters = Object.keys(englishData);
+                document.body.classList.remove('mode-fish');
+            } else if (mode === 'fish') {
+                currentDataset = fishData;
+                currentLetters = Object.keys(fishData);
+                document.body.classList.add('mode-fish');
+            } else {
+                currentMode = 'bn';
+                currentDataset = bengaliData;
+                currentLetters = Object.keys(bengaliData);
+                document.body.classList.remove('mode-fish');
+            }
+        }
+
+        // Set up next target item in the current active mode
+        function setNewQuestion() {
+            currentLetter = currentLetters[Math.floor(Math.random() * currentLetters.length)];
+            
+            if (currentMode !== 'fish') {
+                let choices = new Set();
+                choices.add(currentLetter);
+                // Dynamically present exactly 3 options instead of 5
+                while (choices.size < 3) {
+                    choices.add(currentLetters[Math.floor(Math.random() * currentLetters.length)]);
+                }
+                displayList = Array.from(choices);
+                displayList.sort(() => Math.random() - 0.5);
+            }
+
+            renderTopBar();
+            updatePlayButton();
+        }
+
+        function init() {
+            animTimeouts.forEach(id => clearTimeout(id));
+            animTimeouts = [];
+            
+            determineModeForRound();
+
+            successCount = 0; 
+            wrongAttempts = 0;
+            fishCount = 0;
+            isAnimating = false; 
+
+            const hintEl = document.getElementById('play-hint');
+            if (hintEl) hintEl.style.display = 'none';
+
+            document.getElementById('fish-tank').innerHTML = ''; 
+            clearEffects();
+            document.querySelectorAll('.flying-letter').forEach(el => el.remove());
+            
+            setNewQuestion();
+            
+            playVideo('hungry', true);
+        }
+
+        function manualRefresh() { init(); }
+
+        function renderTopBar() {
+            const listContainer = document.getElementById('letter-list');
+            listContainer.innerHTML = '';
+            
+            // Toggle visibility of Corner Buttons based on mode
+            const countBtn = document.getElementById('fish-count-btn');
+            const checkBtn = document.getElementById('fish-check-btn');
+
+            if (currentMode === 'fish') {
+                countBtn.style.display = 'flex';
+                checkBtn.style.display = 'flex';
+            } else {
+                countBtn.style.display = 'none';
+                checkBtn.style.display = 'none';
+            }
+
+            // Render Center Content
+            if (currentMode === 'fish') {
+                const minusBtn = document.createElement('button');
+                minusBtn.className = 'fish-control-btn minus';
+                minusBtn.textContent = '-';
+                minusBtn.onclick = handleRemoveFish;
+                listContainer.appendChild(minusBtn);
+
+                const plusBtn = document.createElement('button');
+                plusBtn.className = 'fish-control-btn plus';
+                plusBtn.textContent = '+';
+                plusBtn.onclick = handleAddFish;
+                listContainer.appendChild(plusBtn);
+            } else {
+                displayList.forEach(char => {
+                    const li = document.createElement('li');
+                    li.className = 'letter-item';
+                    li.textContent = char;
+                    li.onclick = (e) => handleLetterClick(e, char);
+                    listContainer.appendChild(li);
+                });
+            }
+        }
+
+        function updatePlayButton() {
+            const btn = document.getElementById('play-btn');
+            const svg = document.getElementById('play-icon-svg');
+            
+            if (currentMode === 'fish') {
+                if (svg) svg.style.display = 'none';
+                btn.textContent = currentLetter; 
+            } else {
+                btn.textContent = ''; 
+                btn.innerHTML = `
+                <svg id="play-icon-svg" viewBox="0 0 24 24" style="width: 35px; height: 35px; fill: #FF9800; margin-left: 4px;">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <div id="play-hint"></div>`;
+            }
+        }
+
+        function handleAddFish() {
+            if (isAnimating) return;
+            const tank = document.getElementById('fish-tank');
+            if (tank.children.length >= 11) return; 
+
+            const fish = document.createElement('div');
+            fish.className = 'fish-item';
+            fish.textContent = '🐟';
+            
+            const x = Math.random() * 80 + 10;
+            const y = Math.random() * 40 + 5; 
+            
+            fish.style.left = x + '%';
+            fish.style.top = y + '%';
+            fish.style.transform = `rotate(${Math.random() * 30 - 15}deg)`;
+            
+            tank.appendChild(fish);
+        }
+
+        function handleRemoveFish() {
+            if (isAnimating) return;
+            const tank = document.getElementById('fish-tank');
+            if (tank.lastChild) {
+                tank.removeChild(tank.lastChild);
+            }
+        }
+
+        // Voice output configuration
+        function speakFishCount() {
+            if (isAnimating) return;
+            const tank = document.getElementById('fish-tank');
+            const count = tank.children.length;
+            
+            const textToSpeak = numToBengaliWord[count] || count.toString();
+            
+            if (videoElement) videoElement.muted = true;
+            if (currentUtterance) {
+                currentUtterance.onend = null;
+                currentUtterance.onerror = null;
+            }
+
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'bn-IN';
+            utterance.rate = 0.9;
+            
+            utterance.onend = () => {
+                if (videoElement) videoElement.muted = false;
+                currentUtterance = null;
+            };
+            utterance.onerror = () => {
+                 if (videoElement) videoElement.muted = false;
+                 currentUtterance = null;
+            };
+
+            currentUtterance = utterance;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function handleCheckButton() {
+            if (isAnimating) return; 
+            const tank = document.getElementById('fish-tank');
+            const fishes = Array.from(tank.children);
+            const count = fishes.length;
+            
+            if (count === 0) return; 
+            
+            isAnimating = true;
+
+            const totodileRect = document.getElementById('totodile-container').getBoundingClientRect();
+            
+            fishes.forEach(fish => {
+                fish.style.transition = 'all 0.5s ease-in-out';
+                fish.style.left = '50%';
+                fish.style.top = '25%';
+                fish.style.transform = 'translate(-50%, -50%) rotate(0deg)'; 
+            });
+            
+            let t1 = setTimeout(() => {
+                const destX = totodileRect.left + (totodileRect.width / 2);
+                const destY = totodileRect.top + (totodileRect.height / 2);
+                
+                fishes.forEach(fish => {
+                   fish.style.left = destX + 'px';
+                   fish.style.top = destY + 'px';
+                   fish.style.opacity = '0'; 
+                   fish.style.transform = 'translate(-50%, -50%) scale(0.2)'; 
+                });
+                
+                let t2 = setTimeout(() => {
+                    tank.innerHTML = '';
+                    
+                    let targetVal = bengaliToNum[currentLetter] || parseInt(currentLetter);
+                    
+                    if (count === targetVal) {
+                        successCount++;
+                        wrongAttempts = 0;
+                        const hintEl = document.getElementById('play-hint');
+                        if (hintEl) hintEl.style.display = 'none'; 
+                        
+                        showEffects('blue');
+                        spawnFlowers();
+                        
+                        playVideo('happy', false, () => {
+                            clearEffects();
+                            if (successCount >= TARGET_WINS) {
+                                init();
+                            } else {
+                                setNewQuestion(); 
+                                playVideo('hungry', true);
+                                isAnimating = false;
+                            }
+                        });
+                    } else {
+                        wrongAttempts++;
+                        showEffects('red');
+                        
+                        playVideo('angry', false, () => {
+                            clearEffects();
+                            playVideo('hungry', true);
+                            isAnimating = false;
+                        });
+                    }
+                }, 500);
+                animTimeouts.push(t2); 
+            }, 500); 
+            animTimeouts.push(t1);
+        }
+
+        function handleLetterClick(e, char) {
+            if (isAnimating) return; 
+            isAnimating = true;
+
+            const originalLetter = e.target;
+            const rect = originalLetter.getBoundingClientRect();
+            const totodileRect = document.getElementById('totodile-container').getBoundingClientRect();
+
+            const clone = document.createElement('div');
+            clone.className = 'flying-letter';
+            clone.textContent = char;
+            clone.style.left = rect.left + 'px';
+            clone.style.top = rect.top + 'px';
+            clone.style.width = rect.width + 'px';
+            clone.style.height = rect.height + 'px';
+            document.body.appendChild(clone);
+
+            const destX = totodileRect.left + (totodileRect.width / 2) - (rect.width / 2);
+            const destY = totodileRect.top + (totodileRect.height / 2); 
+
+            clone.animate([
+                { transform: 'translate(0, 0) scale(1)' },
+                { transform: `translate(${destX - rect.left}px, ${destY - rect.top}px) scale(0.5)` }
+            ], { duration: 800, easing: 'ease-in' }).onfinish = () => {
+                clone.remove();
+                processFeeding(char);
+            };
+        }
+
+        function processFeeding(char) {
+            if (char === currentLetter) {
+                successCount++;
+                wrongAttempts = 0;
+                const hintEl = document.getElementById('play-hint');
+                if (hintEl) hintEl.style.display = 'none';
+
+                showEffects('blue');
+                spawnFlowers();
+                
+                playVideo('happy', false, () => {
+                    clearEffects();
+                    if (successCount >= TARGET_WINS) {
+                        init();
+                    } else {
+                        setNewQuestion(); 
+                        playVideo('hungry', true);
+                        isAnimating = false;
+                    }
+                });
+            } else {
+                wrongAttempts++;
+                showEffects('red');
+                if (wrongAttempts >= 2) {
+                    const hintEl = document.getElementById('play-hint');
+                    if (hintEl) {
+                        hintEl.textContent = currentLetter;
+                        hintEl.style.display = 'flex';
+                    }
+                }
+                
+                playVideo('angry', false, () => {
+                    clearEffects();
+                    playVideo('hungry', true);
+                    isAnimating = false;
+                });
+            }
+        }
+
+        function showEffects(type) {
+            document.getElementById('effects-layer').className = type === 'red' ? 'red-smog' : 'blue-smog';
+        }
+
+        function clearEffects() {
+            document.getElementById('effects-layer').className = '';
+            document.querySelectorAll('.flower').forEach(e => e.remove());
+        }
+
+        function spawnFlowers() {
+            const layer = document.getElementById('effects-layer');
+            for(let i=0; i<15; i++) {
+                const f = document.createElement('div');
+                f.className = 'flower';
+                f.textContent = '🌼';
+                f.style.left = (Math.random() * 90) + 'vw';
+                f.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+                f.style.fontSize = (1.5 + Math.random() * 2) + 'rem';
+                layer.appendChild(f);
+            }
+        }
+
+        function playVideo(type, loop = false, onEndedCallback = null) {
+            const src = videos[type];
+            const fallback = () => {
+                document.getElementById('video-placeholder').style.display = 'flex';
+                document.getElementById('video-placeholder').textContent = `Video Error: ${type}`;
+                videoElement.style.display = 'none'; 
+                
+                if (onEndedCallback && !loop) {
+                    setTimeout(onEndedCallback, 2000);
+                } else if (loop) {
+                    isAnimating = false;
+                }
+            };
+
+            document.getElementById('video-placeholder').style.display = 'none';
+            videoElement.style.display = 'block';
+
+            if (videoElement.safetyTimeout) {
+                clearTimeout(videoElement.safetyTimeout);
+                videoElement.safetyTimeout = null;
+            }
+            
+            videoElement.src = src;
+            videoElement.loop = loop;
+            videoElement.muted = false; 
+
+            if (onEndedCallback && !loop) {
+                videoElement.safetyTimeout = setTimeout(() => {
+                    if (onEndedCallback) onEndedCallback();
+                }, 8000); 
+            }
+
+            videoElement.onerror = (e) => {
+                if (videoElement.safetyTimeout) clearTimeout(videoElement.safetyTimeout);
+                fallback();
+            };
+
+            const playPromise = videoElement.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    if (onEndedCallback && !loop) {
+                        if (videoElement.safetyTimeout) clearTimeout(videoElement.safetyTimeout);
+                        fallback();
+                    }
+                });
+            }
+
+            videoElement.onended = () => {
+                if (videoElement.safetyTimeout) clearTimeout(videoElement.safetyTimeout);
+                if (onEndedCallback) onEndedCallback();
+            };
+        }
+
+        function speakPrompt() {
+            if (!currentLetter) return;
+            if (videoElement) videoElement.muted = true;
+            if (currentUtterance) {
+                currentUtterance.onend = null;
+                currentUtterance.onerror = null;
+            }
+
+            const nickname = currentDataset[currentLetter];
+            let spokenName = characterName;
+
+            let textToSpeak = "";
+            if (currentMode === 'fish') {
+                textToSpeak = `${spokenName} এখন ; ${nickname} ; টি মাছ খেতে চায়`;
+            } else {
+                textToSpeak = `${spokenName} এখন ; ${nickname} ; খেতে চায়`;
+            }
+            
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'bn-IN';
+            utterance.rate = 0.9; 
+            
+            utterance.onend = () => {
+                if (videoElement) videoElement.muted = false;
+                currentUtterance = null;
+            };
+            utterance.onerror = () => {
+                 if (videoElement) videoElement.muted = false;
+                 currentUtterance = null;
+            };
+
+            currentUtterance = utterance;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        window.onload = async () => {
+            // Apply loaded persistent character name value to Settings Input field
+            document.getElementById('character-name-input').value = characterName;
+            handleNameChange(characterName);
+
+            updateSettingsUI();
+            init();
+        };
+    </script>
+</body>
+</html>

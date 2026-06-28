@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kids Learning Hub</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --bn-grad: linear-gradient(135deg, #ef4444, #f97316);
+            --en-grad: linear-gradient(135deg, #2563eb, #4f46e5);
+            --amber-grad: linear-gradient(135deg, #fbbf24, #d97706);
+            --emerald-grad: linear-gradient(135deg, #34d399, #059669);
+            --indigo-grad: linear-gradient(135deg, #6366f1, #4f46e5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .grid-top {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        @media (min-width: 600px) {
+            .grid-top {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .square-box {
+            aspect-ratio: 1 / 1;
+            background-color: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .square-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .square-box:active {
+            transform: scale(0.97);
+        }
+
+        .box-bn { border-color: #fcd34d; font-size: 72px; font-weight: 900; background: var(--bn-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .box-en { border-color: #c7d2fe; font-size: 72px; font-weight: 900; background: var(--en-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .box-emoji { font-size: 72px; }
+
+        .bottom-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .rect-btn {
+            border: none;
+            border-radius: 16px;
+            padding: 20px;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            outline: none;
+        }
+
+        .rect-btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-l { background: var(--emerald-grad); }
+        .btn-c { background: var(--amber-grad); }
+        .btn-r { background: var(--indigo-grad); }
+
+        .icon {
+            width: 32px;
+            height: 32px;
+            fill: currentColor;
+        }
+
+        .drawer {
+            display: none;
+            background-color: #f1f5f9;
+            border: 2px dashed #cbd5e1;
+            border-radius: 24px;
+            padding: 16px;
+        }
+
+        .drawer.active {
+            display: block;
+        }
+
+        .grid-custom {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            max-h: 400px;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 600px) {
+            .grid-custom {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .label {
+            position: absolute;
+            bottom: 12px;
+            left: 8px;
+            right: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+
+        .dot-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background-color: #f1f5f9;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .dot-btn:hover {
+            background-color: #e2e8f0;
+        }
+
+        /* Full Screen Viewer - Absolute containment to avoid overflow */
+        .viewer {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            z-index: 1000;
+            display: none;
+            border: none;
+        }
+
+        .viewer iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Fullscreen Code Workspace - Fixed containment logic */
+        .editor {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #0f172a;
+            color: #ffffff;
+            z-index: 900;
+            display: none;
+            flex-direction: column;
+            overflow: hidden; /* Avoid window scrolling */
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background-color: #020617;
+            border-bottom: 1px solid #1e293b;
+            flex-shrink: 0; /* Keep size intact */
+        }
+
+        .editor-input {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #ffffff;
+            padding: 6px 12px;
+            font-family: monospace;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+            max-width: 260px;
+        }
+
+        .editor-body {
+            flex: 1; /* Automatically takes all available middle height */
+            min-height: 0; /* Critical for inner scrolling child */
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-textarea {
+            width: 100%;
+            height: 100%;
+            flex: 1;
+            min-height: 0;
+            background-color: #020617;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #34d399;
+            resize: none;
+            outline: none;
+            overflow-y: auto;
+        }
+
+        .editor-footer {
+            padding: 12px 16px;
+            background-color: #020617;
+            border-top: 1px solid #1e293b;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-shrink: 0; /* Block footer from shrinking or pushed off-screen */
+        }
+
+        .btn-act {
+            border: none;
+            padding: 10px 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-cancel { background-color: #334155; color: #ffffff; }
+        .btn-save { background: #ea580c; color: #ffffff; }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 1100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 340px;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-item {
+            margin-bottom: 12px;
+        }
+
+        .input-text {
+            width: 100%;
+            background-color: #f8fafc;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .modal-btns {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-modal {
+            border: none;
+            padding: 10px;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .btn-m-save { background-color: #6366f1; color: #ffffff; }
+        .btn-m-edit { background-color: #fbbf24; color: #0f172a; }
+        .btn-m-cancel { background-color: #f1f5f9; color: var(--muted); }
+        .btn-m-del { background-color: #fef2f2; color: #ef4444; }
+
+        .sec-box {
+            color: #ef4444;
+            background-color: #fef2f2;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 1500;
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 4 MAIN TOP SQUARES -->
+        <div class="grid-top">
+            <button onclick="openApp('aaee.html')" class="square-box">
+                <span class="box-bn">অ</span>
+            </button>
+            <button onclick="openApp('abcd.html')" class="square-box">
+                <span class="box-en">A</span>
+            </button>
+            <button onclick="openApp('dile.html')" class="square-box">
+                <span class="box-emoji">🐊</span>
+            </button>
+            <button onclick="openApp('cat.html')" class="square-box">
+                <span class="box-emoji">🐱</span>
+            </button>
+        </div>
+
+        <!-- 3 BOTTOM RECTANGULAR BOXES -->
+        <div class="bottom-row">
+            <button onclick="triggerUpload()" class="rect-btn btn-l">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+            </button>
+            <button onclick="openPasteEditor()" class="rect-btn btn-c">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/>
+                </svg>
+            </button>
+            <button onclick="toggleExpand()" class="rect-btn btn-r">
+                <svg id="expandIcon" class="icon" viewBox="0 0 24 24">
+                    <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- EXPAND DRAWER -->
+        <div id="expandedPanel" class="drawer">
+            <div id="uploadedGrid" class="grid-custom"></div>
+        </div>
+    </div>
+
+    <!-- INVISIBLE UPLOAD -->
+    <input type="file" id="htmlFileInput" accept=".html" style="display: none;" onchange="handleFileUpload(event)">
+
+    <!-- SIMPLIFIED IFRAME CONTAINER -->
+    <div id="appContainer" class="viewer">
+        <iframe id="appFrame"></iframe>
+    </div>
+
+    <!-- FULLSCREEN CODE PASTE WORKSPACE -->
+    <div id="pasteEditorContainer" class="editor">
+        <!-- Header -->
+        <div class="editor-header">
+            <input type="text" id="pasteName" class="editor-input" value="name.html">
+            <button onclick="closePasteEditor()" style="background:none; border:none; color:#fff; cursor:pointer; display:flex; align-items:center;">
+                <svg style="width:24px; height:24px; fill:currentColor;" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+        <!-- Work Area -->
+        <div class="editor-body">
+            <textarea id="pasteArea" class="editor-textarea" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+        </div>
+        <!-- Bottom Controls -->
+        <div class="editor-footer">
+            <button onclick="closePasteEditor()" class="btn-act btn-cancel">Cancel</button>
+            <button id="editorSaveBtn" onclick="organizeAndSave()" class="btn-act btn-save">Organize and Save</button>
+        </div>
+    </div>
+
+    <!-- EDIT / CUSTOMIZE SHORTCUT MODAL -->
+    <div id="editModal" class="overlay" onclick="closeEditModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <!-- Configuration View -->
+            <div id="modalEditView">
+                <div class="form-item">
+                    <input type="text" id="editEmoji" class="input-text" style="font-size:24px; text-align:center;">
+                </div>
+                <div class="form-item">
+                    <input type="text" id="editName" class="input-text">
+                </div>
+                <div class="modal-btns">
+                    <button onclick="saveAppEdit()" class="btn-modal btn-m-save">Save</button>
+                    <button onclick="editActiveAppCode()" class="btn-modal btn-m-edit">Edit App Code</button>
+                    <button onclick="showDeleteConfirmView()" class="btn-modal btn-m-del">Delete</button>
+                    <button onclick="closeEditModal()" class="btn-modal btn-m-cancel">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Delete Protection Verification View -->
+            <div id="modalDeleteView" style="display: none;">
+                <div class="sec-box">Code: 7654</div>
+                <div class="form-item">
+                    <input type="text" id="deleteCodeInput" class="input-text" style="text-align:center; font-size:18px; letter-spacing:4px;" maxlength="4" placeholder="••••">
+                </div>
+                <div class="modal-btns">
+                    <button onclick="verifyAndExecuteDelete()" class="btn-modal btn-m-del">Confirm</button>
+                    <button onclick="showEditOptionsView()" class="btn-modal btn-m-cancel">Back</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const DB_NAME = "KidsLearningHubDB";
+        const STORE_NAME = "appsStore";
+        let db;
+        let activeAppKey = null;
+        let isEditingExistingCode = false;
+
+        function initDB() {
+            return new Promise((resolve) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function triggerUpload() {
+            document.getElementById('htmlFileInput').click();
+        }
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const appEntry = {
+                    id: 'app_' + Date.now(),
+                    name: file.name.replace(/\.html$/i, ''),
+                    emoji: "📁",
+                    content: e.target.result,
+                    timestamp: Date.now()
+                };
+                await storeApp(appEntry);
+                event.target.value = '';
+                loadCustomApps();
+                showToast("Saved");
+                
+                const panel = document.getElementById('expandedPanel');
+                if (!panel.classList.contains('active')) toggleExpand();
+            };
+            reader.readAsText(file);
+        }
+
+        function openPasteEditor() {
+            isEditingExistingCode = false;
+            document.getElementById('pasteName').value = "name.html";
+            document.getElementById('pasteArea').value = "";
+            document.getElementById('editorSaveBtn').textContent = "Organize and Save";
+            document.getElementById('pasteEditorContainer').style.display = "flex";
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePasteEditor() {
+            document.getElementById('pasteEditorContainer').style.display = "none";
+            document.body.style.overflow = '';
+        }
+
+        function editActiveAppCode() {
+            if (!activeAppKey) return;
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(activeAppKey);
+
+            request.onsuccess = (e) => {
+                const app = e.target.result;
+                if (!app) return;
+
+                isEditingExistingCode = true;
+                document.getElementById('pasteName').value = app.name + ".html";
+                document.getElementById('pasteArea').value = app.content || "";
+                document.getElementById('editorSaveBtn').textContent = "Organize and Update";
+
+                document.getElementById('editModal').style.display = "none";
+                document.getElementById('pasteEditorContainer').style.display = "flex";
+                document.body.style.overflow = 'hidden';
+            };
+        }
+
+        async function organizeAndSave() {
+            let code = document.getElementById('pasteArea').value;
+            let fileName = document.getElementById('pasteName').value.trim();
+
+            if (!code.trim()) return;
+            if (!fileName) fileName = "unnamed.html";
+
+            const firstAngle = code.indexOf('<');
+            const lastAngle = code.lastIndexOf('>');
+
+            if (firstAngle !== -1 && lastAngle !== -1 && lastAngle > firstAngle) {
+                code = code.substring(firstAngle, lastAngle + 1);
+            } else {
+                showToast("Invalid HTML");
+                return;
+            }
+
+            const appName = fileName.replace(/\.html$/i, '');
+
+            if (isEditingExistingCode && activeAppKey) {
+                const transaction = db.transaction([STORE_NAME], "readwrite");
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(activeAppKey);
+
+                request.onsuccess = (e) => {
+                    const app = e.target.result;
+                    if (!app) return;
+
+                    app.name = appName;
+                    app.content = code;
+                    app.timestamp = Date.now();
+
+                    const updateRequest = store.put(app);
+                    updateRequest.onsuccess = () => {
+                        closePasteEditor();
+                        loadCustomApps();
+                        showToast("Updated");
+                        activeAppKey = null;
+                    };
+                };
+            } else {
+                const appEntry = {
+                    id: 'app_' + Date.now(),
+                    name: appName,
+                    emoji: "📝",
+                    content: code,
+                    timestamp: Date.now()
+                };
+                await storeApp(appEntry);
+                closePasteEditor();
+                loadCustomApps();
+                showToast("Saved");
+
+                const panel = document.getElementById('expandedPanel');
+                if (!panel.classList.contains('active')) toggleExpand();
+            }
+        }
+
+        function storeApp(app) {
+            return new Promise((resolve) => {
+                const transaction = db.transaction([STORE_NAME], "readwrite");
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(app);
+                request.onsuccess = () => resolve();
+            });
+        }
+
+        function loadCustomApps() {
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = (e) => {
+                const apps = e.target.result;
+                const grid = document.getElementById('uploadedGrid');
+                grid.innerHTML = '';
+
+                if (apps.length === 0) return;
+                apps.sort((a, b) => b.timestamp - a.timestamp);
+
+                apps.forEach(app => {
+                    const card = document.createElement('div');
+                    card.className = "square-box";
+                    card.style.borderColor = "#cbd5e1";
+                    card.setAttribute('onclick', `runCustomApp('${app.id}')`);
+                    
+                    card.innerHTML = `
+                        <button 
+                            onpointerdown="suppress(event)" 
+                            ontouchstart="suppress(event)" 
+                            onclick="triggerConfigModal(event, '${app.id}')" 
+                            class="dot-btn"
+                        >
+                            <svg style="width: 16px; height: 16px; fill: currentColor;" viewBox="0 0 24 24">
+                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </button>
+                        <span class="box-emoji">${app.emoji || "📁"}</span>
+                        <span class="label">${app.name}</span>
+                    `;
+                    grid.appendChild(card);
+                });
+            };
+        }
+
+        function suppress(event) {
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        }
+
+        function openApp(fileName) {
+            const appContainer = document.getElementById('appContainer');
+            const appFrame = document.getElementById('appFrame');
+            appFrame.src = fileName;
+            history.pushState({ appOpen: true }, "");
+            appContainer.style.display = "block";
+            document.body.style.overflow = 'hidden';
+        }
+
+        function runCustomApp(appId) {
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(appId);
+
+            request.onsuccess = (e) => {
+                const app = e.target.result;
+                if (!app) return;
+
+                const blob = new Blob([app.content], { type: 'text/html;charset=utf-8' });
+                const blobUrl = URL.createObjectURL(blob);
+
+                const appContainer = document.getElementById('appContainer');
+                const appFrame = document.getElementById('appFrame');
+                
+                appFrame.src = blobUrl;
+                appFrame.dataset.blobUrl = blobUrl;
+
+                history.pushState({ appOpen: true }, "");
+                appContainer.style.display = "block";
+                document.body.style.overflow = 'hidden';
+            };
+        }
+
+        function closeApp() {
+            const appContainer = document.getElementById('appContainer');
+            const appFrame = document.getElementById('appFrame');
+            
+            if (appFrame.dataset.blobUrl) {
+                URL.revokeObjectURL(appFrame.dataset.blobUrl);
+                delete appFrame.dataset.blobUrl;
+            }
+            
+            appFrame.src = "about:blank";
+            appContainer.style.display = "none";
+            document.body.style.overflow = '';
+        }
+
+        window.addEventListener('popstate', () => {
+            const appContainer = document.getElementById('appContainer');
+            if (appContainer.style.display === "block") closeApp();
+        });
+
+        function toggleExpand() {
+            const panel = document.getElementById('expandedPanel');
+            const icon = document.getElementById('expandIcon');
+            
+            if (!panel.classList.contains('active')) {
+                panel.classList.add('active');
+                icon.innerHTML = `<path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>`;
+            } else {
+                panel.classList.remove('active');
+                icon.innerHTML = `<path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>`;
+            }
+        }
+
+        function triggerConfigModal(event, appId) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            
+            activeAppKey = appId;
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(appId);
+
+            request.onsuccess = (e) => {
+                const app = e.target.result;
+                if (!app) return;
+
+                document.getElementById('editEmoji').value = app.emoji || "📁";
+                document.getElementById('editName').value = app.name || "";
+                
+                showEditOptionsView();
+                document.getElementById('deleteCodeInput').value = "";
+                document.getElementById('editModal').style.display = "flex";
+            };
+        }
+
+        function showEditOptionsView() {
+            document.getElementById('modalEditView').style.display = "block";
+            document.getElementById('modalDeleteView').style.display = "none";
+        }
+
+        function showDeleteConfirmView() {
+            document.getElementById('deleteCodeInput').value = "";
+            document.getElementById('modalEditView').style.display = "none";
+            document.getElementById('modalDeleteView').style.display = "block";
+            setTimeout(() => document.getElementById('deleteCodeInput').focus(), 50);
+        }
+
+        // Close Dialog Layout
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = "none";
+            activeAppKey = null;
+        }
+
+        function saveAppEdit() {
+            if (!activeAppKey) return;
+
+            const updatedEmoji = document.getElementById('editEmoji').value.trim() || "📁";
+            const updatedName = document.getElementById('editName').value.trim() || "App";
+
+            const transaction = db.transaction([STORE_NAME], "readwrite");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(activeAppKey);
+
+            request.onsuccess = (e) => {
+                const app = e.target.result;
+                if (!app) return;
+
+                app.emoji = updatedEmoji;
+                app.name = updatedName;
+
+                const updateRequest = store.put(app);
+                updateRequest.onsuccess = () => {
+                    closeEditModal();
+                    loadCustomApps();
+                    showToast("Saved");
+                };
+            };
+        }
+
+        function verifyAndExecuteDelete() {
+            if (!activeAppKey) return;
+            const code = document.getElementById('deleteCodeInput').value.trim();
+
+            if (code !== "7654") {
+                showToast("Incorrect");
+                return;
+            }
+
+            const transaction = db.transaction([STORE_NAME], "readwrite");
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.delete(activeAppKey);
+
+            request.onsuccess = () => {
+                closeEditModal();
+                loadCustomApps();
+                showToast("Deleted");
+            };
+        }
+
+        window.onload = async function () {
+            await initDB();
+            loadCustomApps();
+        };
+    </script>
+</body>
+</html>

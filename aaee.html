@@ -1,0 +1,2137 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bengali Text-to-Speech</title>
+    <style>
+        /* Universal box-sizing for consistent layout */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: flex-start;   /* Align to top, for fixed header */
+            min-height: 100vh;
+            padding: 0; /* Remove body padding to allow app-wrapper to take full space */
+            margin: 0;
+            overflow: hidden; /* Prevent any scrollbars from body */
+            position: relative;
+        }
+        .app-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100vw; /* Take full viewport width */
+            height: 100vh; /* Take full viewport height */
+            max-width: 600px; /* Max width for a phone-like experience */
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 0; /* No border-radius for full screen */
+            overflow: hidden; /* Hide content overflow within the wrapper */
+        }
+
+        .header {
+            position: fixed; /* Make header fixed */
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%); /* Center the fixed header */
+            width: 100%;
+            max-width: 600px; /* Match app-wrapper max-width */
+            height: 60px; /* Explicitly set header height */
+            display: block; /* Changed to block to allow absolute positioning of children */
+            background-color: #ede9fe; /* Purple-100 */
+            border-bottom: 1px solid #ddd6fe; /* Purple-200 */
+            z-index: 9999; /* Ensure header is always on top */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optional: Add a subtle shadow to fixed header */
+        }
+        .susovan-pal-title-container {
+            position: absolute; /* Position absolutely within the header */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Center both horizontally and vertically */
+            display: flex; /* Keep flex for its internal content (h2 and play-icon) */
+            justify-content: center; /* Center its content */
+            align-items: center;
+            gap: 0.5rem;
+            color: #7c3aed; /* Purple-600 */
+            font-size: 1.2rem;
+            font-weight: 700;
+            width: fit-content; /* Adjust width to content */
+        }
+        .susovan-pal-title-container h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+        .susovan-pal-title-container .play-icon {
+            margin-top: 0;
+            width: 28px;
+            height: 28px;
+            background-color: #a78bfa; /* Purple-400 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .susovan-pal-title-container .play-icon:hover {
+            background-color: #8b5cf6;
+        }
+        .susovan-pal-title-container .play-icon svg {
+            width: 14px;
+            height: 14px;
+            fill: white;
+        }
+
+        .score-display {
+            position: absolute;
+            left: 1rem; /* Position on the left */
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #7c3aed; /* Purple-600 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            background-color: #e0e7ff; /* Light blue/purple background */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10000; /* Ensure it's above other elements if they overlap */
+        }
+
+        .hamburger-menu-button {
+            position: absolute;
+            top: 50%; /* Center vertically */
+            right: 1rem;
+            transform: translateY(-50%); /* Center vertically */
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000; /* Increased z-index to be above the fixed header */
+        }
+        .hamburger-menu-button:hover {
+            background-color: #e5e7eb;
+        }
+        .hamburger-menu-button svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .shorts-container {
+            flex-grow: 1; /* Takes remaining height */
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory; /* Re-enable scroll snap for swipe behavior */
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+            z-index: 10;
+            margin-top: 60px; /* Add margin to account for fixed header height */
+            padding-bottom: 80px; /* Space for navigation buttons at the bottom */
+            height: calc(100vh - 60px); /* Fill remaining viewport height */
+        }
+
+        .short-card {
+            width: 100%;
+            height: calc(100% - 1px); /* Take 100% of its parent (shorts-container) minus 1px for padding */
+            flex-shrink: 0;
+            scroll-snap-align: start; /* Snap to the top of the container */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #ffffff; /* White background for the box */
+            border-radius: 0.75rem; /* Rounded corners for the box */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+            padding: 1.5rem; /* Increased padding inside the box */
+            margin-bottom: 0; /* No margin needed between full-height snapped cards */
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .short-card .emoji {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            line-height: 1;
+        }
+        .short-card .nickname-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            transition: font-size 0.2s ease-in-out; /* Smooth transition for enlargement */
+        }
+        .short-card .nickname-display.enlarged-nickname {
+            font-size: 6rem; /* 2x enlargement */
+        }
+        .short-card .rhyme-display {
+            font-size: 1.5rem;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .play-icon {
+            background-color: #a78bfa; /* Purple-400 */
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .play-icon:hover {
+            background-color: #8b5cf6; /* Purple-500 */
+        }
+        .play-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        /* New button group for play and rhyme buttons */
+        .button-group {
+            display: flex;
+            gap: 1rem; /* Space between play and rhyme buttons */
+            margin-top: 1rem; /* Space above the button group */
+            align-items: center; /* Align items vertically in the center */
+        }
+
+        /* Forgotten Button Container */
+        .forgotten-button-container {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px; /* Match app-wrapper max-width */
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: #ffffff;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 9998; /* Below header, above content */
+        }
+        .nav-button { /* Reusing nav-button for forgotten button */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: none;
+            background-color: #7c3aed; /* Primary color */
+            color: white;
+        }
+        .nav-button:hover {
+            background-color: #6d28d9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .nav-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        /* Glow effect for forgotten button */
+        @keyframes glow-red {
+            0% { box-shadow: 0 0 5px 2px rgba(255, 0, 0, 0.6); }
+            50% { box-shadow: 0 0 10px 5px rgba(255, 0, 0, 0.9); }
+            100% { box-shadow: 0 0 5px 2px rgba(255, 0, 0, 0.6); }
+        }
+        .nav-button.glow-red {
+            animation: glow-red 1.5s infinite alternate;
+        }
+
+        .forgotten-emoji {
+            margin-left: 0.5rem; /* Space between text and emoji */
+            font-size: 1.2em; /* Make emoji slightly larger than text */
+            line-height: 1; /* Ensure vertical alignment */
+        }
+
+
+        /* Expandable Menu Container */
+        #hamburgerMenuContainer {
+            background-color: #ffffff;
+            padding: 0 1.5rem; /* Padding for content, but 0 top/bottom initially */
+            border-radius: 0 0 1rem 1rem; /* Rounded corners only at bottom when expanded */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            position: fixed; /* Changed to fixed to be relative to viewport */
+            top: 60px; /* Directly below the fixed header (60px) */
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
+            width: 100%;
+            max-width: 600px; /* Match app-wrapper max-width */
+            max-height: 0; /* Start collapsed */
+            overflow: hidden; /* Hide content when collapsed */
+            opacity: 0; /* Start transparent */
+            z-index: 10001; /* Above hamburger button and header */
+            visibility: hidden; /* Hide completely when collapsed */
+            pointer-events: none; /* Disable interactions when hidden */
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out, visibility 0s 0.3s; /* Delay visibility change when hiding */
+        }
+        #hamburgerMenuContainer.show {
+            max-height: 9999px; /* Sufficiently large to show all content */
+            opacity: 1;
+            padding-top: 1.5rem; /* Add padding when expanded */
+            padding-bottom: 1.5rem; /* Add padding when expanded */
+            visibility: visible; /* Show when expanded */
+            pointer-events: auto; /* Enable interactions when shown */
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, padding-top 0.3s ease-in-out, padding-bottom 0.3s ease-in-out, visibility 0s 0s; /* No delay when showing */
+        }
+
+        /* Expandable Menu Sections */
+        .menu-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin-bottom: 0.5rem; /* Space between sections */
+        }
+        .menu-section:last-child {
+            margin-bottom: 0;
+        }
+        .menu-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: #f9fafb;
+            cursor: pointer;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .menu-section-header:hover {
+            background-color: #f3f4f6;
+        }
+        .menu-section-header svg {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.2s ease-in-out;
+        }
+        .menu-section-header.expanded svg {
+            transform: rotate(90deg); /* Rotate icon when expanded */
+        }
+        .menu-section-content {
+            padding: 0 1rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+        .menu-section-content.expanded {
+            max-height: 300px; /* Adjust as needed for content height */
+            padding: 1rem;
+            overflow-y: auto; /* Allow vertical scrolling */
+        }
+
+        /* Jump To List */
+        #jumpToOptions {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px; /* Limit height for scrollability */
+            overflow-y: auto;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 0.5rem;
+        }
+        #jumpToOptions li {
+            padding: 0.5rem 0;
+            cursor: pointer;
+            color: #4b5563;
+            transition: background-color 0.2s;
+            border-bottom: 1px dashed #f3f4f6;
+        }
+        #jumpToOptions li:last-child {
+            border-bottom: none;
+        }
+        #jumpToOptions li:hover {
+            background-color: #f9fafb;
+            color: #7c3aed;
+        }
+
+        /* Custom Text Input Area */
+        #customTextInputSection {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            /* No padding here, it's handled by .menu-section-content.expanded */
+        }
+        #customTextInputSection label, #customTextInputSection input, #customTextInputSection textarea, #rewardLinkInput, #deleteCodeInput {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            outline: none;
+            box-shadow: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: #1f2937;
+            resize: none; /* Prevent user resizing */
+            background-color: #fff;
+        }
+        #customTextInputSection textarea {
+            min-height: 80px; /* Give it a reasonable default height */
+        }
+        #customTextInputSection .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        /* Smaller buttons for custom text menu */
+        #customTextInputSection .button.menu-button, #addRewardLinkButton {
+            flex: 1; /* Allow them to grow */
+            min-width: unset; /* Remove min-width constraint */
+            padding: 0.5rem 1rem; /* Smaller padding */
+            font-size: 0.9rem; /* Smaller font size */
+            height: auto; /* Adjust height based on content */
+        }
+        #customTextInputSection .button.menu-button svg {
+            width: 18px; /* Smaller icon */
+            height: 18px; /* Smaller icon */
+            margin-right: 0.25rem; /* Reduced margin */
+        }
+
+        /* Base Button Styles */
+        .button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: none; /* Ensure no default border */
+        }
+
+        .button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        /* Primary Button */
+        .primary-button {
+            background-color: #7c3aed; /* Purple-600 */
+            color: white;
+        }
+        .primary-button:hover {
+            background-color: #6d28d9; /* Purple-700 */
+        }
+
+        /* Secondary Button */
+        .secondary-button {
+            background-color: #e5e7eb; /* Gray-200 */
+            color: #374151; /* Gray-700 */
+            border: 1px solid #d1d5db; /* Gray-300 */
+        }
+        .secondary-button:hover {
+            background-color: #d1d5db; /* Gray-300 */
+        }
+
+        /* Confirm Delete Button (specific style) */
+        .confirm-delete-button {
+            background-color: #ef4444; /* Red-500 */
+            color: white;
+        }
+        .confirm-delete-button:hover {
+            background-color: #dc2626; /* Red-600 */
+        }
+        .confirm-delete-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #ef4444; /* Keep red but dimmed */
+        }
+
+        /* Modals and Messages (Existing styles, kept for reference) */
+        .message-box {
+            position: fixed;
+            top: 80px; /* Adjusted position */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* Highest z-index for messages */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .message-box.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000; /* Set very high to be above hamburger menu */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-content h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .modal-content p {
+            margin-bottom: 1rem;
+        }
+        .modal-content .flex {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+        #basketballsDisplay {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            word-break: break-all;
+        }
+
+        .dot-menu-container {
+            position: relative; /* Changed to relative to contain dropdown */
+            z-index: 10003; /* Increased z-index to be above everything */
+        }
+        .dot-menu-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            z-index: 10003; /* Ensure button itself is on top */
+        }
+        .dot-menu-button:hover {
+            background-color: #e5e7eb;
+        }
+        .dot-menu-dropdown {
+            position: absolute;
+            top: 100%; /* Position below the button */
+            right: 0; /* Align to the right of the button */
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            min-width: 120px;
+            visibility: hidden; /* Hidden by default, toggled by JS */
+            pointer-events: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10003; /* Ensure dropdown is on top */
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out, visibility 0s 0.3s;
+        }
+        .dot-menu-dropdown.show {
+            visibility: visible;
+            pointer-events: auto;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out, visibility 0s 0s;
+        }
+        .dot-menu-dropdown button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #374151;
+            transition: background-color 0.2s;
+            width: 100%;
+            border-radius: 0;
+        }
+        .dot-menu-dropdown button:hover {
+            background-color: #f3f4f6;
+        }
+        .dot-menu-dropdown button.delete-option {
+            color: #ef4444;
+        }
+        .dot-menu-dropdown button.delete-option:hover {
+            background-color: #fee2e2;
+        }
+
+        /* Glow effect for dot menu button */
+        @keyframes pulse-glow {
+            from {
+                box-shadow: 0 0 8px 4px rgba(124, 58, 237, 0.6), 0 0 12px 6px rgba(124, 58, 237, 0.4);
+            }
+            to {
+                box-shadow: 0 0 12px 6px rgba(124, 58, 237, 0.9), 0 0 18px 10px rgba(124, 58, 237, 0.8);
+            }
+        }
+        .dot-menu-button.glowing {
+            box-shadow: 0 0 10px 5px rgba(124, 58, 237, 0.8), 0 0 15px 8px rgba(124, 58, 237, 0.6);
+            animation: pulse-glow 1.5s infinite alternate;
+        }
+
+        /* Glow effect for individual emoji */
+        @keyframes pulse-emoji-glow {
+            from {
+                text-shadow: 0 0 5px rgba(255, 215, 0, 0.6), 0 0 10px rgba(255, 215, 0, 0.4);
+            }
+            to {
+                text-shadow: 0 0 10px rgba(255, 215, 0, 0.9), 0 0 15px rgba(255, 215, 0, 0.8);
+            }
+        }
+        .emoji.glowing-emoji {
+            animation: pulse-emoji-glow 1.5s infinite alternate;
+        }
+
+        .easter-egg-emoji {
+            position: fixed;
+            font-size: 5rem; /* Matched to .short-card .emoji size to prevent shrinking */
+            pointer-events: none;
+            animation-fill-mode: forwards;
+            white-space: nowrap;
+            will-change: left, top;
+            z-index: 99999; /* Very high z-index to ensure visibility */
+            line-height: 1;
+        }
+        @keyframes vertical-emoji-rain {
+            0% { transform: translateY(-100px) translateX(var(--x-offset)); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(calc(100vh + 100px)) translateX(var(--x-offset)); opacity: 0; }
+        }
+        .vertical-rain-emoji {
+            animation: vertical-emoji-rain 7.5s linear forwards;
+        }
+        @keyframes emoji-dance-path {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(100px, 0) rotate(90deg); }
+            50% { transform: translate(100px, 100px) rotate(180deg); }
+            75% { transform: translate(0, 100px) rotate(270deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+        .dance-emoji {
+            animation: emoji-dance-path 7.5s linear infinite;
+            opacity: 1;
+        }
+        .crawling-clone {
+            transition: left 1s ease-in-out, top 1s ease-in-out; /* Ensured 1s transition for visible crawl */
+        }
+        .hidden-original-emoji {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #rewardLinksList {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0 0 0;
+        }
+        #rewardLinksList li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px dashed #e5e7eb;
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+        #rewardLinksList li:last-child {
+            border-bottom: none;
+        }
+        #rewardLinksList li span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 0.5rem;
+            max-width: 80%;
+        }
+        .delete-reward-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        .delete-reward-btn:hover {
+            color: #dc2626;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div class="header">
+            <div class="score-display"><span id="scoreValue">০</span></div>
+            <div class="susovan-pal-title-container">
+                <h2>সুশোভন পাল</h2>
+                <div id="susovonPalPlayButton" class="play-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+            <button id="toggleHamburgerMenuButton" class="hamburger-menu-button">
+                <!-- Hamburger menu icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu">
+                    <line x1="4" x2="20" y1="12" y2="12"/>
+                    <line x1="4" x2="20" y1="6" y2="6"/>
+                    <line x1="4" x2="20" y1="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="shorts-container" id="shortsContainer">
+            <!-- Short cards will be dynamically loaded here -->
+            <p id="noShortcutsMessage" class="col-span-full text-center text-gray-500" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">কোন শর্টকাট এখনো যোগ করা হয়নি।</p>
+        </div>
+
+        <!-- Forgotten Button Container -->
+        <div class="forgotten-button-container">
+            <button id="forgottenButton" class="nav-button">
+                ভুলে যাওয়া <span id="forgottenEmoji" class="forgotten-emoji"></span>
+            </button>
+        </div>
+
+        <!-- Hamburger Menu Container -->
+        <div id="hamburgerMenuContainer">
+            <!-- Jump to a particular box section -->
+            <div class="menu-section">
+                <div class="menu-section-header" id="jumpToHeader">
+                    <span>একটি নির্দিষ্ট বাক্সে যান</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right">
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </div>
+                <div class="menu-section-content" id="jumpToContent">
+                    <ul id="jumpToOptions">
+                        <!-- Jump options will be dynamically loaded here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Add Reward Links Section -->
+            <div class="menu-section">
+                <div class="menu-section-header" id="rewardLinksHeader">
+                    <span>পুরস্কারের লিঙ্ক যোগ করুন</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right">
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </div>
+                <div class="menu-section-content" id="rewardLinksContent">
+                     <div style="display: flex; flex-direction: column; gap: 1rem; padding-top: 1rem; padding-bottom: 1rem;">
+                        <label for="rewardLinkInput">পুরস্কারের লিঙ্ক (URL):</label>
+                        <input type="url" id="rewardLinkInput" placeholder="https://youtube.com/..." />
+                        <button id="addRewardLinkButton" class="button primary-button">লিঙ্ক যোগ করুন</button>
+                        <ul id="rewardLinksList">
+                            <!-- Reward links will be dynamically loaded here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Custom Text section -->
+            <div class="menu-section">
+                <div class="menu-section-header" id="addCustomTextHeader">
+                    <span>কাস্টম টেক্সট যোগ করুন</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right">
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </div>
+                <div class="menu-section-content" id="addCustomTextContent">
+                    <div id="customTextInputSection"> <!-- This div now contains the input elements -->
+                        <label for="textInput">টেক্সট বলতে লিখুন:</label>
+                        <textarea id="textInput"
+                                  placeholder="এখানে বাংলা লিখুন..."
+                                  lang="bn"></textarea>
+                        <label for="nicknameInput">শর্টকাটের জন্য ডাকনাম:</label>
+                        <input type="text" id="nicknameInput"
+                               placeholder="এখানে ডাকনাম লিখুন">
+                        <label for="emojiInput">ঐচ্ছিক ইমোজি:</label>
+                        <input type="text" id="emojiInput"
+                               placeholder="এখানে ইমোজি লিখুন (ঐচ্ছিক)">
+                        <div class="flex-row flex-wrap justify-center gap-4">
+                            <button id="speakButton" class="button primary-button menu-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.994 9.994 0 0119 10a9.994 9.994 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.996 7.996 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.828 2.828a1 1 0 011.414 0A5.996 5.996 0 0115 10a5.996 5.996 0 01-1.757 4.243 1 1 0 01-1.414-1.414A3.996 3.996 0 0013 10a3.996 3.996 0 00-1.172-2.828 1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                                টেক্সট বলুন
+                            </button>
+                            <button id="addShortcutButton" class="button secondary-button menu-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                শর্টকাট যোগ করুন
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Box -->
+        <div id="messageBox" class="message-box"></div>
+
+        <!-- Emoji Input Modal -->
+        <div id="emojiModal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>শর্টকাট যোগ করুন</h3>
+                <p>শর্টকাটের জন্য একটি ডাকনাম লিখুন (এটি স্ক্রিনে প্রদর্শিত হবে):</p>
+                <input type="text" id="nicknameInputModal"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 mb-4"
+                       placeholder="এখানে ডাকনাম লিখুন">
+                <p class="mb-4">ঐচ্ছিক ইমোজি যোগ করুন (যেমন, 👋, 😊, 🏠):</p>
+                <input type="text" id="emojiInputModal"
+                       placeholder="এখানে ইমোজি লিখুন (ঐচ্ছিক)">
+                <div class="flex"> <!-- Buttons centered via CSS -->
+                    <button id="cancelEmojiButton" class="button secondary-button">বাতিল করুন</button>
+                    <button id="saveEmojiButton" class="button primary-button">শর্টকাট সেভ করুন</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmationModal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>মুছে ফেলার নিশ্চিতকরণ</h3>
+                <p id="confirmationMessage">আপনি কি এই শর্টকাটটি মুছে ফেলতে চান?</p>
+                <p class="font-bold">নিশ্চিত করতে "1468" কোডটি লিখুন:</p>
+                <input type="text" id="deleteCodeInput"
+                       placeholder="এখানে কোড লিখুন">
+                <div class="flex"> <!-- Buttons centered via CSS -->
+                    <button id="cancelDeleteButton" class="button secondary-button">না, বাতিল করুন</button>
+                    <button id="confirmDeleteButton" class="button confirm-delete-button" disabled>হ্যাঁ, মুছে ফেলুন</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Easter Egg Modal -->
+        <div id="easterEggModal" class="modal-overlay">
+            <div class="modal-content">
+                <p id="basketballsDisplay"></p>
+                <div class="flex"> <!-- Buttons centered via CSS -->
+                    <button id="closeEasterEggModal" class="button primary-button mt-4">বন্ধ করুন</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reward Modal -->
+        <div id="rewardModal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>অভিনন্দন!</h3>
+                <p id="rewardMessage">আপনার জন্য একটি পুরস্কার আছে!</p>
+                <div class="flex">
+                    <button id="viewRewardButton" class="button primary-button">পুরস্কার দেখুন</button>
+                    <button id="closeRewardModal" class="button secondary-button">বন্ধ করুন</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        window.onload = function() {
+            const textInput = document.getElementById('textInput');
+            const speakButton = document.getElementById('speakButton');
+            const addShortcutButton = document.getElementById('addShortcutButton');
+            const shortsContainer = document.getElementById('shortsContainer');
+            const messageBox = document.getElementById('messageBox');
+
+            const nicknameInputFromCustomSection = document.getElementById('nicknameInput'); // New ID for custom section input
+            const emojiInputFromCustomSection = document.getElementById('emojiInput');     // New ID for custom section input
+
+            const emojiModal = document.getElementById('emojiModal');
+            const nicknameInputModal = document.getElementById('nicknameInputModal'); // Modal input
+            const emojiInputModal = document.getElementById('emojiInputModal');     // Modal input
+            const cancelEmojiButton = document.getElementById('cancelEmojiButton');
+            const saveEmojiButton = document.getElementById('saveEmojiButton');
+
+            const confirmationModal = document.getElementById('confirmationModal');
+            const confirmationMessage = document.getElementById('confirmationMessage');
+            const deleteCodeInput = document.getElementById('deleteCodeInput');
+            const cancelDeleteButton = document.getElementById('cancelDeleteButton');
+            const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+
+            const easterEggModal = document.getElementById('easterEggModal');
+            const basketballsDisplay = document.getElementById('basketballsDisplay');
+            const closeEasterEggModal = document.getElementById('closeEasterEggModal');
+
+            const rewardModal = document.getElementById('rewardModal');
+            const rewardMessage = document.getElementById('rewardMessage'); // Added reward message element
+            const viewRewardButton = document.getElementById('viewRewardButton');
+            const closeRewardModal = document.getElementById('closeRewardModal');
+            let currentRewardLink = '';
+
+            const toggleHamburgerMenuButton = document.getElementById('toggleHamburgerMenuButton');
+            const hamburgerMenuContainer = document.getElementById('hamburgerMenuContainer');
+
+            const jumpToHeader = document.getElementById('jumpToHeader');
+            const jumpToContent = document.getElementById('jumpToContent');
+            const jumpToOptions = document.getElementById('jumpToOptions');
+
+            const rewardLinksHeader = document.getElementById('rewardLinksHeader');
+            const rewardLinksContent = document.getElementById('rewardLinksContent');
+            const rewardLinkInput = document.getElementById('rewardLinkInput');
+            const addRewardLinkButton = document.getElementById('addRewardLinkButton');
+            const rewardLinksList = document.getElementById('rewardLinksList');
+
+
+            const addCustomTextHeader = document.getElementById('addCustomTextHeader');
+            const addCustomTextContent = document.getElementById('addCustomTextContent');
+            const customTextInputSection = document.getElementById('customTextInputSection');
+
+            const susovonPalPlayButton = document.getElementById('susovonPalPlayButton');
+
+            const forgottenButton = document.getElementById('forgottenButton');
+            const forgottenEmojiSpan = document.getElementById('forgottenEmoji');
+            const scoreValueDisplay = document.querySelector('.score-display span'); // Select the span inside score-display
+
+
+            const DELETE_CODE = "1468";
+            const LOCAL_STORAGE_KEY = 'bengaliSpeechShortcuts';
+            const LOCAL_STORAGE_LAST_SPOKEN_ID = 'lastSpokenShortcutId';
+            const LOCAL_STORAGE_REWARDS_KEY = 'bengaliRewardLinks';
+
+            let currentShortcutIndex = 0;
+            let isHamburgerMenuExpanded = false;
+            let isAnyEasterEggActive = false;
+            let activeEasterEggElements = [];
+            let ignoreNextDocumentClick = false; // Re-introduced for hamburger menu
+            let score = 0; // Initialize score, will reset on reload
+
+            const SUSOVON_PAL_PHRASES = [
+                "পড়া করে নাও সুশোভন",
+                "কেমন আছো সুশোভন",
+                "তোমার গ্রামের নাম ছোটো সরসা",
+                "বসে বসে পড়বে শুয়ে পড়বে না যেনো",
+                "তোমার নাম সুশোভন পাল"
+            ];
+
+            const DEFAULT_REWARDS = [];
+            
+            const MIN_SCORE_FOR_REWARD = 25; // Minimum score required for reward
+
+            function capitalizeFirstWord(str) {
+                if (!str) return str;
+                const words = str.split(' ');
+                if (words.length > 0) {
+                    words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
+                }
+                return words.join(' ');
+            }
+
+            function bengaliToEnglishDigit(bengaliNum) {
+                const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+                const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+                let englishNum = '';
+                for (let i = 0; i < bengaliNum.length; i++) {
+                    const index = bengaliDigits.indexOf(bengaliNum[i]);
+                    if (index !== -1) {
+                        englishNum += englishDigits[index];
+                    } else {
+                        englishNum += bengaliNum[i];
+                    }
+                }
+                return englishNum;
+            }
+
+            function englishToBengaliDigit(englishNum) {
+                const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+                return String(englishNum).split('').map(digit => {
+                    const num = parseInt(digit, 10);
+                    return isNaN(num) ? digit : bengaliDigits[num];
+                }).join('');
+            }
+
+            const ENLARGEABLE_NICKNAMES = new Set();
+            
+            const ANIMAL_EMOJIS = new Set([
+                '🐍', '🐀', '🦅', '🐪', '🐦', '🐺', '🐄', '🐸', '🐅', '🐐', '🦜', '🐻', '🦚', '🦢', '🐂', '🦁', '🐕', '🦎', '🦗', '🦋', '🦟', '🦆',
+                '🐤', '🐈', '🦌', '🚗'
+            ]);
+            
+            const ALL_USED_EMOJIS = new Set();
+
+            let initialDefaultShortcuts = [
+                // Vowels (Swaravarna)
+                { id: 'অ-অ', text: 'অ', nickname: 'অ', emoji: '🐍', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('অজগর আসছে তেড়ে') },
+                { id: 'আ-আ', text: 'আ', nickname: 'আ', emoji: '🍋', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('আমটি আমি খাবো পেড়ে') },
+                { id: 'হস্রই-ই', text: 'হস্রই', nickname: 'ই', emoji: '🐀', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ইঁদুর ছানা ভয়ে মরে') },
+                { id: 'দীর্ঘঈ-ঈ', text: 'দীর্ঘঈ', nickname: 'ঈ', emoji: '🦅', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঈগল পাখি পাছে ধরে') },
+                { id: 'হস্রউ-উ', text: 'হস্রউ', nickname: 'উ', emoji: '🐪', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('উট চলেছে মুখটি তুলে') },
+                { id: 'দীর্ঘঊ-ঊ', text: 'দীর্ঘঊ', nickname: 'ঊ', emoji: '🚠', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('দীর্ঘঊ টি আছে ঝুলে') },
+                { id: 'ঋ-ঋ', text: 'ঋ', nickname: 'ঋ', emoji: '🎅', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঋষি মশাই বসেন পূজায়') },
+                { id: 'লি-ঌ', text: 'লি', nickname: 'ঌ', emoji: '🃏', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('লিকার যেন ডিগবাজি খায়') },
+                { id: 'এ-এ', text: 'এ', nickname: 'এ', emoji: '🛒', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('এক্কা গাড়ি খুব ছুটেছে') },
+                { id: 'ঐ-ঐ', text: 'ঐ', nickname: 'ঐ', emoji: '🌙', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঐ দেখ ভাই চাঁদ উঠেছে') },
+                { id: 'ও-ও', text: 'ও', nickname: 'ও', emoji: '🥔', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ওল খেও না, ধরবে গলা') },
+                { id: 'ঔ-ঔ', text: 'ঔ', nickname: 'ঔ', emoji: '💊', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঔষধ খেতে মিছে বলা'), easterEgg: 'rain' },
+                { id: 'সুশোভন-সুশোভন', text: 'সুশোভন', nickname: 'সুশোভন', emoji: '👶', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('সুশোভন খুব ভালো ছেলে') },
+
+                // Consonants (Byanjanvarna)
+                { id: 'ক-ক', text: 'ক', nickname: 'ক', emoji: '🐦', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('কাকাতুয়ার মাথায় ঝুঁটি') },
+                { id: 'খ-খ', text: 'খ', nickname: 'খ', emoji: '🐺', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('খেঁকশেয়াল টি পালায় ছুটে') },
+                { id: 'গ-গ', text: 'গ', nickname: 'গ', emoji: '🐄', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('গরু বাছুর দাঁড়িয়ে আছে') },
+                { id: 'ঘ-ঘ', text: 'ঘ', nickname: 'ঘ', emoji: '🐦', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঘুঘু পাখি ডাকছে গাছে') },
+                { id: 'ঙ-ঙ', text: 'উঙও', nickname: 'ঙ', emoji: '🐸', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('উঙও নৌকা মাঝি ব্যাং') },
+                { id: 'চ-চ', text: 'চ', nickname: 'চ', emoji: '🐅', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('চিতা বাঘের সরু ঠ্যাং') },
+                { id: 'ছ-ছ', text: 'ছ', nickname: 'ছ', emoji: '🐐', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ছাগল ছানা লাফিয়ে চলে') },
+                { id: 'বর্গীয় জ-জ', text: 'বর্গীয় জ', nickname: 'জ', emoji: '🚢', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('জাহাজ ভাসে সাগর জলে') },
+                { id: 'ঝ-ঝ', text: 'ঝ', nickname: 'ঝ', emoji: '🖌️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঝাড়ু হাতে এলো কানাই') },
+                { id: 'ঞ-ঞ', text: 'ঞ', nickname: 'ঞ', emoji: '👬', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঞ চরে নাচে দু\'ভাই') },
+                { id: 'ট-ট', text: 'ট', nickname: 'ট', emoji: '🐦', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('টিয়া পাখির ঠোঁটটি লাল') },
+                { id: 'ঠ-ঠ', text: 'ঠ', nickname: 'ঠ', emoji: '👴', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঠাকুর দাদার শুকনো গাল') },
+                { id: 'ড-ড', text: 'ড', nickname: 'ড', emoji: '👷🏽‍♂️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ডুলি কাঁধে বেহারা যায়') },
+                { id: 'ঢ-ঢ', text: 'ঢ', nickname: 'ঢ', emoji: '🥁', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঢুলি ভায়া ঢোলক বাজায়') },
+                { id: 'মূর্ধন্য ণ-ণ', text: 'মূর্ধন্য ণ', nickname: 'ণ', emoji: '👃', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('মূর্ধন্য ণ নাকের পরে'), easterEgg: 'dance' },
+                { id: 'ত-ত', text: 'ত', nickname: 'ত', emoji: '🐋', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('তিমি আপন শিকার ধরে') },
+                { id: 'থ-থ', text: 'থ', nickname: 'থ', emoji: '🍽️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('থালা ভরা আছে মিঠাই') },
+                { id: 'দ-দ', text: 'দ', nickname: 'দ', emoji: '✒️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('দোয়াত আছে কালি নাই') },
+                { id: 'ধ-ধ', text: 'ধ', nickname: 'ধ', emoji: '👕', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ধোপা কেমন কাপড় কাচে') },
+                { id: 'দন্ত্য ন-ন', text: 'দন্ত্য ন', nickname: 'ন', emoji: '💇🏽‍♂️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('নাপিত ভায়া দাড়ি চাচে') },
+                { id: 'প-প', text: 'প', nickname: 'প', emoji: '🐤', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('পাখির বাসা হাওয়ায় নড়ে') },
+                { id: 'ফ-ফ', text: 'ফ', nickname: 'ফ', emoji: '⛲', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ফোয়ারা হতে জল পড়ে') },
+                { id: 'ব-পাখি', text: 'ব', nickname: 'ব', emoji: '🐦', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('বুলবুলিটির মুখটি কালো') },
+                { id: 'ভ-ভ', text: 'ভ', nickname: 'ভ', emoji: '🐻', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ভাল্লুক জানে বাঁচতে ভালো') },
+                { id: 'ম-ম', text: 'ম', nickname: 'ম', emoji: '🐦', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ময়ূর নাচে পেখম ধরে') },
+                { id: 'অন্তঃস্থ য-য', text: 'অন্তঃস্থ য', nickname: 'য', emoji: '⚙️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('যাতা ঘোরে হাতের জোরে') },
+                { id: 'র-র', text: 'র', nickname: 'র', emoji: '🦆', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('রাজহাঁসটির গলা সরু') },
+                { id: 'ল-ল', text: 'ল', nickname: 'ল', emoji: '🏒', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('লাঠির চোটে পালায় গরু') },
+                { id: 'ব-বাঘ', text: 'ব', nickname: 'ব', emoji: '🐅', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('বাঘের যত সাহস চোখে') },
+                { id: 'তালব্য শ-শ', text: 'তালব্য শ', nickname: 'শ', emoji: '🦅', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('শকুন কাঁদে গরুর শোকে') },
+                { id: 'মূর্ধন্য ষ-ষ', text: 'মূর্ধন্য ষ', nickname: 'ষ', emoji: '🐂', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ষাঁড় ছুটেছে পুকুর পাড়ে') },
+                { id: 'দন্ত্য স-স', text: 'দন্ত্য স', nickname: 'স', emoji: '🦁', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('সিংহ রাগে কেশর নাড়ে') },
+                { id: 'হ-হ', text: 'হ', nickname: 'হ', emoji: '😄', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('হাসি মুখটি দেখতে বেশ') },
+                { id: 'ড এ শূন্য ড়-ড়', text: 'ড এ শূন্য ড়', nickname: 'ড়', emoji: '🏚️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ড এ শূন্য ড় এর দফা হলো শেষ') },
+                { id: 'ঢ এ শূন্য ঢ়-ঢ়', text: 'ঢ এ শূন্য ঢ়', nickname: 'ঢ়', emoji: '🐕', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঢ এ শূন্য ঢ় এর মাথা কামড়ে খায়') },
+                { id: 'অন্তঃস্থ অ-য়', text: 'অন্তঃস্থ অ', nickname: 'য়', emoji: '🐍', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('অন্তঃস্থ অ ছিল তাই বেঁচে গেল') },
+                { id: 'খন্ডীয় ত-ৎ', text: 'খন্ডীয় ত', nickname: 'ৎ', emoji: '🐈', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('খন্ডীয় ত ঐ পুষির লেজে') },
+                { id: 'ং-ং', text: 'ং', nickname: 'ং', emoji: '🦌', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ং টি হারিয়ে গেছে') },
+                { id: 'ঃ-ঃ', text: 'ঃ', nickname: 'ঃ', emoji: '🤰🏽', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঃ এর ভূঁড়ো পেট') },
+                { id: 'ঁ-ঁ', text: 'ঁ', nickname: 'ঁ', emoji: '🌙', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: capitalizeFirstWord('ঁ মাথা হেঁট'), easterEgg: 'global_crawl' },
+                { id: 'টিকটিকি-টিকটিকি', text: 'টিকটিকি', nickname: 'টিকটিকি', emoji: '🦎', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'ফড়িং-ফড়িং', text: 'ফড়িং', nickname: 'ফড়িং', emoji: '🦗', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'প্রজাপতি-প্রজাপতি', text: 'প্রজাপতি', nickname: 'প্রজাপতি', emoji: '🦋', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'জামা-জামা', text: 'জামা', nickname: 'জামা', emoji: '👕', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'মশারি-মশারি', text: 'মশারি', nickname: 'মশারি', emoji: '🕸️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'পাখা-পাখা', text: 'পাখা', nickname: 'পাখা', emoji: '🌀', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'গাড়ি-গাড়ি', text: 'গাড়ি', nickname: 'গাড়ি', emoji: '🚗', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'জানালা-জানালা', text: 'জানালা', nickname: 'জানালা', emoji: '🔲', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'দরজা-দরজা', text: 'দরজা', nickname: 'দরজা', emoji: '🚪', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'খাট-খাট', text: 'খাট', nickname: 'খাট', emoji: '🛏️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'বালিশ-বালিশ', text: 'বালিশ', nickname: 'বালিশ', emoji: '◼️', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null },
+                { id: 'চাদর-চাদর', text: 'চাদর', nickname: 'চাদর', emoji: '🧣', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null }
+            ];
+
+            // Add number shortcuts with rhymes
+            for (let i = 1; i <= 9; i++) {
+                const bengaliNum = i.toLocaleString('bn-BD');
+                let rhymeText = '';
+                switch(i) {
+                    case 1: rhymeText = capitalizeFirstWord('একে চন্দ্র'); break;
+                    case 2: rhymeText = capitalizeFirstWord('দুইয়ে পক্ষ'); break;
+                    case 3: rhymeText = capitalizeFirstWord('তিনে নেত্র'); break;
+                    case 4: rhymeText = capitalizeFirstWord('চারে বেদ'); break;
+                    case 5: rhymeText = capitalizeFirstWord('পাঁচে পঞ্চবাণ'); break;
+                    case 6: rhymeText = capitalizeFirstWord('ছয়ে ঋতু'); break;
+                    case 7: rhymeText = capitalizeFirstWord('সাতে সমুদ্র'); break;
+                    case 8: rhymeText = capitalizeFirstWord('আটে অষ্টবসু'); break;
+                    case 9: rhymeText = capitalizeFirstWord('নয়ে নবগ্রহ'); break;
+                }
+                initialDefaultShortcuts.push({
+                    id: `${bengaliNum}-${bengaliNum}`,
+                    text: bengaliNum,
+                    nickname: bengaliNum,
+                    emoji: ' #️⃣',
+                    isDefault: true,
+                    isTextPlayed: false,
+                    isRhymePlayed: false,
+                    rhyme: rhymeText
+                });
+            }
+            // Add 'দশ' specifically
+            initialDefaultShortcuts.push({
+                id: 'দশ-১০',
+                text: 'দশ',
+                nickname: '১০',
+                emoji: ' #️⃣',
+                isDefault: true,
+                isTextPlayed: false,
+                isRhymePlayed: false,
+                rhyme: capitalizeFirstWord('দশে দিক')
+            });
+
+            // Add 'টা টা বাই বাই' after 'দশ'
+            // NOTE: Removed hardcoded reward array here. It will now fetch from local storage rewards.
+            const tataByeByeShortcut = { id: 'টা টা বাই বাই-টা টা বাই বাই', text: 'টা টা বাই বাই', nickname: 'টা টা বাই বাই', emoji: '👋🏽', isDefault: true, isTextPlayed: false, isRhymePlayed: false, rhyme: null, isRewardTrigger: true };
+            const indexForTataByeBye = initialDefaultShortcuts.findIndex(s => s.id === 'দশ-১০');
+            if (indexForTataByeBye !== -1) {
+                initialDefaultShortcuts.splice(indexForTataByeBye + 1, 0, tataByeByeShortcut);
+            } else {
+                initialDefaultShortcuts.push(tataByeByeShortcut);
+            }
+
+            initialDefaultShortcuts.forEach(s => {
+                ENLARGEABLE_NICKNAMES.add(s.nickname); // All nicknames are now enlargeable
+                if (s.emoji) {
+                    ALL_USED_EMOJIS.add(s.emoji.trim());
+                }
+            });
+
+            let shortcuts = [];
+            let rewardLinks = [];
+            let itemToDeleteId = null; // Can be shortcut ID or reward link index
+            let deleteType = null; // 'shortcut' or 'reward'
+            let lastSpokenShortcutId = localStorage.getItem(LOCAL_STORAGE_LAST_SPOKEN_ID);
+
+
+            // --- Local Storage Functions ---
+            function saveShortcuts() {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(shortcuts.map(s => {
+                    const { isTextPlayed, isRhymePlayed, ...rest } = s; // Don't save transient state
+                    return rest;
+                })));
+                // Score is intentionally NOT saved to local storage
+            }
+
+            function loadShortcuts() {
+                const storedShortcuts = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (storedShortcuts) {
+                    try {
+                        const parsedShortcuts = JSON.parse(storedShortcuts);
+                        const storedMap = new Map(parsedShortcuts.map(s => [s.id, s]));
+
+                        const mergedShortcuts = initialDefaultShortcuts.map(defaultItem => {
+                            const stored = storedMap.get(defaultItem.id);
+                            return stored ? {
+                                ...defaultItem,
+                                isTextPlayed: stored.isTextPlayed || false, // Load text played state
+                                isRhymePlayed: stored.isRhymePlayed || false, // Load rhyme played state
+                                isEasterEggReady: (stored.isTextPlayed && stored.isRhymePlayed) || false, // Re-derive easter egg readiness
+                                rhyme: stored.rhyme !== undefined ? stored.rhyme : defaultItem.rhyme,
+                                reward: stored.reward !== undefined ? stored.reward : defaultItem.reward,
+                                easterEgg: stored.easterEgg !== undefined ? stored.easterEgg : defaultItem.easterEgg
+                            } : { ...defaultItem, isTextPlayed: false, isRhymePlayed: false, isEasterEggReady: false };
+                        });
+
+                        parsedShortcuts.forEach(storedItem => {
+                            if (!initialDefaultShortcuts.some(defaultItem => defaultItem.id === storedItem.id)) {
+                                mergedShortcuts.push({
+                                    ...storedItem,
+                                    isDefault: false,
+                                    isTextPlayed: storedItem.isTextPlayed || false,
+                                    isRhymePlayed: storedItem.isRhymePlayed || false,
+                                    isEasterEggReady: (storedItem.isTextPlayed && storedItem.isRhymePlayed) || false,
+                                    rhyme: storedItem.rhyme !== undefined ? storedItem.rhyme : null,
+                                    reward: storedItem.reward !== undefined ? storedItem.reward : null,
+                                    easterEgg: storedItem.easterEgg !== undefined ? storedItem.easterEgg : null
+                                });
+                            }
+                        });
+                        shortcuts = mergedShortcuts;
+                    } catch (e) {
+                        console.error("স্থানীয় স্টোরেজ থেকে শর্টকাট পার্স করতে ত্রুটি, ডিফল্ট লোড হচ্ছে।", e);
+                        shortcuts = JSON.parse(JSON.stringify(initialDefaultShortcuts.map(s => ({...s, isTextPlayed: false, isRhymePlayed: false, isEasterEggReady: false}))));
+                    }
+                } else {
+                    shortcuts = JSON.parse(JSON.stringify(initialDefaultShortcuts.map(s => ({...s, isTextPlayed: false, isRhymePlayed: false, isEasterEggReady: false}))));
+                }
+
+                score = 0;
+                updateScoreDisplay();
+            }
+
+            function saveRewardLinks() {
+                localStorage.setItem(LOCAL_STORAGE_REWARDS_KEY, JSON.stringify(rewardLinks));
+            }
+
+            function loadRewardLinks() {
+                const storedRewards = localStorage.getItem(LOCAL_STORAGE_REWARDS_KEY);
+                if (storedRewards) {
+                    try {
+                        rewardLinks = JSON.parse(storedRewards);
+                    } catch (e) {
+                        console.error("Failed to parse reward links, using default.");
+                        rewardLinks = [...DEFAULT_REWARDS];
+                    }
+                } else {
+                    rewardLinks = [...DEFAULT_REWARDS];
+                }
+                renderRewardLinks();
+            }
+
+            // --- Utility Functions ---
+            function showMessage(message, type = 'success') {
+                messageBox.textContent = message;
+                messageBox.className = 'message-box show';
+                if (type === 'error') {
+                    messageBox.style.backgroundColor = '#f44336';
+                } else {
+                    messageBox.style.backgroundColor = '#4CAF50';
+                }
+                setTimeout(() => {
+                    messageBox.classList.remove('show');
+                }, 3000);
+            }
+
+            function updateScoreDisplay() {
+                scoreValueDisplay.textContent = englishToBengaliDigit(score);
+            }
+
+            function speakText(text, shortcutId = null, isRhyme = false) {
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel(); 
+
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'bn-IN';
+
+                    const voices = speechSynthesis.getVoices();
+                    const bengaliVoice = voices.find(voice => voice.lang === 'bn-IN');
+                    if (bengaliVoice) {
+                        utterance.voice = bengaliVoice;
+                    } else {
+                        console.warn("বাংলা ভয়েস পাওয়া যায়নি, bn-IN এর জন্য ডিফল্ট ব্যবহার করা হচ্ছে।");
+                    }
+
+                    utterance.onend = () => {
+                        const spokenShortcut = shortcuts.find(s => s.id === shortcutId);
+
+                        if (spokenShortcut) {
+                            if (!isRhyme) {
+                                spokenShortcut.isTextPlayed = true;
+                                score++;
+                            } else {
+                                spokenShortcut.isRhymePlayed = true;
+                                score++;
+                            }
+
+                            // Easter egg is ready only if both text and rhyme have been played
+                            spokenShortcut.isEasterEggReady = spokenShortcut.isTextPlayed && spokenShortcut.isRhymePlayed;
+                            
+                            lastSpokenShortcutId = spokenShortcut.id;
+                            localStorage.setItem(LOCAL_STORAGE_LAST_SPOKEN_ID, spokenShortcut.id);
+                            updateForgottenButtonGlow();
+
+                            // Check for rewards (now dynamic)
+                            if (spokenShortcut.isRewardTrigger) {
+                                if (score >= MIN_SCORE_FOR_REWARD) {
+                                    if (rewardLinks.length > 0) {
+                                        const randomIndex = Math.floor(Math.random() * rewardLinks.length);
+                                        const rewardLinkToOpen = rewardLinks[randomIndex];
+                                        showRewardModal(rewardLinkToOpen);
+                                    } else {
+                                        showMessage("কোন পুরস্কারের লিঙ্ক পাওয়া যায়নি। অনুগ্রহ করে মেনু থেকে লিঙ্ক যোগ করুন।", "error");
+                                    }
+                                } else {
+                                    rewardMessage.textContent = `এই পুরস্কারটি আনলক করতে ${englishToBengaliDigit(MIN_SCORE_FOR_REWARD)} বা তার বেশি স্কোর করুন! বর্তমান স্কোর: ${englishToBengaliDigit(score)}`;
+                                    showRewardModal(null);
+                                }
+                            }
+                        }
+                        updateScoreDisplay();
+                        saveShortcuts();
+                        renderShortcuts();
+                    };
+                    utterance.onerror = (event) => {
+                        console.error("SpeechSynthesisUtterance error:", event.error);
+                    };
+
+                    speechSynthesis.speak(utterance);
+                } else {
+                    showMessage("এই ব্রাউজারে টেক্সট-টু-SPEECH সমর্থিত নয়।", 'error');
+                    console.error("SpeechSynthesis API সমর্থিত নয়।");
+                }
+            }
+
+            // --- UI Creation and Event Handlers ---
+            function createShortCard(shortcut) {
+                const shortCard = document.createElement('div');
+                shortCard.className = 'short-card';
+                shortCard.dataset.id = shortcut.id;
+
+                const emojiSpan = document.createElement('span');
+                emojiSpan.className = 'emoji';
+                if (shortcut.emoji) {
+                    emojiSpan.textContent = shortcut.emoji;
+                    if (shortcut.isDefault && shortcut.emoji.includes('#️⃣')) { // For number emojis
+                        emojiSpan.classList.add('clickable');
+                        emojiSpan.addEventListener('click', (event) => {
+                            event.stopPropagation();
+                            const num = parseInt(bengaliToEnglishDigit(shortcut.nickname), 10);
+                            if (!isNaN(num)) {
+                                showEasterEggModal(num);
+                            }
+                        });
+                    }
+                    if (ANIMAL_EMOJIS.has(shortcut.emoji.trim())) { // For animal emojis
+                        emojiSpan.classList.add('clickable');
+                        if (shortcut.isEasterEggReady && !isAnyEasterEggActive) {
+                            emojiSpan.classList.add('glowing-emoji');
+                            emojiSpan.style.opacity = '1';
+                            emojiSpan.style.cursor = 'pointer';
+                        } else if (isAnyEasterEggActive) {
+                            emojiSpan.style.opacity = '0.5';
+                            emojiSpan.style.cursor = 'not-allowed';
+                            emojiSpan.classList.remove('glowing-emoji');
+                        } else {
+                            emojiSpan.style.opacity = '1';
+                            emojiSpan.style.cursor = 'pointer';
+                            emojiSpan.classList.remove('glowing-emoji');
+                        }
+                        emojiSpan.addEventListener('click', (event) => {
+                            event.stopPropagation();
+                            if (shortcut.isEasterEggReady && !isAnyEasterEggActive) {
+                                startIndividualEmojiCrawl(shortcut.id);
+                            } else if (isAnyEasterEggActive) {
+                                showMessage("ইমোজিগুলি ইতিমধ্যেই সক্রিয়!", 'error');
+                            } else {
+                                showMessage("এই ইমোজিটি সক্রিয় করতে প্রথমে এর সংশ্লিষ্ট শব্দ এবং ছড়া উভয়ই উচ্চারণ করুন।", 'error');
+                            }
+                        });
+                    }
+                }
+                shortCard.appendChild(emojiSpan);
+
+                const nicknameDisplay = document.createElement('p');
+                nicknameDisplay.className = 'nickname-display';
+                nicknameDisplay.textContent = shortcut.nickname;
+
+                // All nicknames are now enlargeable
+                nicknameDisplay.style.cursor = 'pointer';
+                nicknameDisplay.addEventListener('click', (event) => {
+                    event.target.classList.toggle('enlarged-nickname');
+                });
+                shortCard.appendChild(nicknameDisplay);
+
+                if (shortcut.rhyme) {
+                    const rhymeDisplay = document.createElement('p');
+                    rhymeDisplay.className = 'rhyme-display';
+                    rhymeDisplay.textContent = shortcut.rhyme;
+                    shortCard.appendChild(rhymeDisplay);
+                }
+
+                // Button Group for Play, Rhyme and Dot Menu
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'button-group';
+
+                const playIcon = document.createElement('div');
+                playIcon.className = 'play-icon';
+                playIcon.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                `;
+                playIcon.addEventListener('click', () => {
+                    speechSynthesis.cancel();
+                    speakText(shortcut.text, shortcut.id, false); // Pass isRhyme = false
+                });
+                buttonGroup.appendChild(playIcon);
+
+                // Individual Rhyme Button
+                if (shortcut.rhyme) {
+                    const rhymeButton = document.createElement('button');
+                    rhymeButton.className = 'button secondary-button'; /* Use secondary button styling */
+                    rhymeButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.994 9.994 0 0119 10a9.994 9.994 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.996 7.996 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.828 2.828a1 1 0 011.414 0A5.996 5.996 0 0115 10a5.996 5.996 0 01-1.757 4.243 1 1 0 01-1.414-1.414A3.996 3.996 0 0013 10a3.996 3.996 0 00-1.172-2.828 1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        ছড়া বলুন
+                    `;
+                    rhymeButton.addEventListener('click', () => {
+                        speechSynthesis.cancel();
+                        speakText(shortcut.rhyme, shortcut.id, true); // Pass isRhyme = true
+                    });
+                    buttonGroup.appendChild(rhymeButton);
+                }
+                
+                const dotMenuContainer = document.createElement('div');
+                dotMenuContainer.className = 'dot-menu-container';
+                
+                const dotMenuButton = document.createElement('button');
+                dotMenuButton.className = 'dot-menu-button';
+                dotMenuButton.innerHTML = '⋮';
+                dotMenuButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    document.querySelectorAll('.dot-menu-dropdown.show').forEach(menu => {
+                        if (menu !== dotMenuDropdown) {
+                            menu.classList.remove('show');
+                        }
+                    });
+                    dotMenuDropdown.classList.toggle('show');
+                });
+                dotMenuContainer.appendChild(dotMenuButton);
+
+                const dotMenuDropdown = document.createElement('div');
+                dotMenuDropdown.className = 'dot-menu-dropdown';
+
+                if (shortcut.easterEgg) {
+                    const easterEggButton = document.createElement('button');
+                    easterEggButton.textContent = `অ্যাক্টিভেট ${shortcut.easterEgg === 'rain' ? 'ইমোজি রেইন' : shortcut.easterEgg === 'dance' ? 'ইমোজি ডান্স' : 'ইমোজি ক্রল'}`;
+                    easterEggButton.disabled = isAnyEasterEggActive || !shortcut.isEasterEggReady;
+                    easterEggButton.addEventListener('click', () => {
+                        if (!isAnyEasterEggActive && shortcut.isEasterEggReady) {
+                            if (shortcut.easterEgg === 'rain') {
+                                startVerticalEmojiRain(shortcut.id);
+                            } else if (shortcut.easterEgg === 'dance') {
+                                startEmojiDance(shortcut.id);
+                            } else if (shortcut.easterEgg === 'global_crawl') {
+                                startGlobalEmojiCrawl(shortcut.id);
+                            }
+                        } else if (isAnyEasterEggActive) {
+                            showMessage("ইমোজিগুলি ইতিমধ্যেই সক্রিয়!", 'error');
+                        } else if (!shortcut.isEasterEggReady) {
+                            showMessage(`এই ইস্টার এগ সক্রিয় করতে প্রথমে এর সংশ্লিষ্ট শব্দ এবং ছড়া উভয়ই উচ্চারণ করুন।`, 'error');
+                        }
+                        dotMenuDropdown.classList.remove('show');
+                    });
+                    dotMenuDropdown.appendChild(easterEggButton);
+                }
+
+                if (!shortcut.isDefault) {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'delete-option';
+                    deleteButton.textContent = 'মুছে ফেলুন';
+                    deleteButton.addEventListener('click', () => {
+                        showConfirmationModal('shortcut', shortcut.id);
+                        dotMenuDropdown.classList.remove('show');
+                    });
+                    dotMenuDropdown.appendChild(deleteButton);
+                }
+
+                dotMenuContainer.appendChild(dotMenuDropdown);
+                buttonGroup.appendChild(dotMenuContainer); // Append to buttonGroup
+
+                shortCard.appendChild(buttonGroup); // Append buttonGroup to shortCard
+
+                const isEasterEggAvailableForThisShortcut = shortcut.easterEgg;
+
+                if (isEasterEggAvailableForThisShortcut && shortcut.isEasterEggReady && !isAnyEasterEggActive) {
+                    dotMenuButton.classList.add('glowing');
+                } else {
+                    dotMenuButton.classList.remove('glowing');
+                }
+
+                return shortCard;
+            }
+
+            function renderRewardLinks() {
+                rewardLinksList.innerHTML = '';
+                rewardLinks.forEach((link, index) => {
+                    const li = document.createElement('li');
+                    
+                    const span = document.createElement('span');
+                    span.textContent = link;
+                    span.title = link;
+                    li.appendChild(span);
+
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'delete-reward-btn';
+                    delBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    `;
+                    delBtn.onclick = () => showConfirmationModal('reward', index);
+                    li.appendChild(delBtn);
+
+                    rewardLinksList.appendChild(li);
+                });
+            }
+
+            // --- Navigation Functions ---
+            function renderAllShortcuts() {
+                shortsContainer.innerHTML = ''; // Clear existing cards
+                if (shortcuts.length === 0) {
+                    shortsContainer.innerHTML = `<p id="noShortcutsMessage" class="col-span-full text-center text-gray-500" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">কোন শর্টকাট এখনো যোগ করা হয়নি।</p>`;
+                    return;
+                }
+                shortcuts.forEach(shortcut => {
+                    const card = createShortCard(shortcut);
+                    shortsContainer.appendChild(card);
+                });
+                observeShortCards(); // Re-observe new cards
+                renderJumpToMenu(); // Update jump to menu
+                updateForgottenButtonGlow(); // Update glow after rendering
+            }
+
+            function scrollToShortcut(index) {
+                if (shortsContainer.children.length === 0) return;
+
+                if (index < 0) index = 0;
+                if (index >= shortcuts.length) index = shortcuts.length - 1;
+
+                currentShortcutIndex = index; 
+                const targetCard = shortsContainer.children[currentShortcutIndex];
+                if (targetCard) {
+                    targetCard.scrollIntoView({ behavior: 'auto', block: 'start' });
+                }
+                updateForgottenButtonGlow(); // Update glow after scrolling
+            }
+
+            let observer;
+            let lastIntersectedShortcutId = null;
+
+            function observeShortCards() {
+                if (observer) {
+                    observer.disconnect();
+                }
+
+                observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && entry.intersectionRatio >= 0.95) {
+                            const visibleShortcutId = entry.target.dataset.id;
+                            const visibleShortcutIndex = shortcuts.findIndex(s => s.id === visibleShortcutId);
+
+                            if (visibleShortcutIndex !== -1 && visibleShortcutId !== lastIntersectedShortcutId) {
+                                currentShortcutIndex = visibleShortcutIndex;
+                                lastIntersectedShortcutId = visibleShortcutId;
+                                updateForgottenButtonGlow(); // Update glow when a new card becomes primary
+                            }
+                        }
+                    });
+                }, { threshold: 0.95 });
+
+                document.querySelectorAll('.short-card').forEach(card => {
+                    observer.observe(card);
+                });
+            }
+
+            function updateForgottenButtonGlow() {
+                // Always remove glow first
+                forgottenButton.classList.remove('glow-red');
+                forgottenEmojiSpan.textContent = ''; // Clear emoji
+
+                if (!lastSpokenShortcutId || shortcuts.length === 0) {
+                    return; // No last spoken ID or no shortcuts, no glowing needed
+                }
+
+                const lastSpokenIndex = shortcuts.findIndex(s => s.id === lastSpokenShortcutId);
+                if (lastSpokenIndex === -1) {
+                    return; // Last spoken shortcut not found, no glowing needed
+                }
+
+                const expectedNextIndex = (lastSpokenIndex + 1) % shortcuts.length;
+                
+                // Glow red if the current box is NOT the one immediately after the last played box,
+                // AND the current box is NOT the last played box itself.
+                if (currentShortcutIndex !== expectedNextIndex && currentShortcutIndex !== lastSpokenIndex) {
+                    forgottenButton.classList.add('glow-red');
+                    forgottenEmojiSpan.textContent = '😾'; // Show emoji when glowing
+                }
+                // Else, no glow (already handled by removing glow at the start)
+            }
+
+
+            function jumpToShortcut(nickname) {
+                const index = shortcuts.findIndex(s => s.nickname === nickname);
+                if (index !== -1) {
+                    scrollToShortcut(index);
+                    if (isHamburgerMenuExpanded) {
+                        toggleHamburgerMenu();
+                    }
+                } else {
+                    showMessage(`"${nickname}" শর্টকাট পাওয়া যায়নি।`, 'error');
+                }
+            }
+
+            // --- Modal Functions ---
+            function showEmojiModal() {
+                // Use the values from the custom section's inputs for the modal's inputs
+                nicknameInputModal.value = nicknameInputFromCustomSection.value.trim();
+                emojiInputModal.value = emojiInputFromCustomSection.value.trim();
+                emojiModal.classList.add('show');
+                nicknameInputModal.focus();
+            }
+
+            function hideEmojiModal() {
+                emojiModal.classList.remove('show');
+            }
+
+            function showConfirmationModal(type, idOrIndex) {
+                deleteType = type;
+                itemToDeleteId = idOrIndex;
+                
+                if (type === 'shortcut') {
+                    const shortcut = shortcuts.find(s => s.id === idOrIndex);
+                    if (shortcut) {
+                        confirmationMessage.textContent = `আপনি "${shortcut.nickname}" মুছে ফেলতে চলেছেন।`;
+                    } else {
+                        confirmationMessage.textContent = `আপনি কি এই শর্টকাটটি মুছে ফেলতে চান?`;
+                    }
+                } else if (type === 'reward') {
+                    confirmationMessage.textContent = `আপনি কি এই পুরস্কারের লিঙ্কটি মুছে ফেলতে চান?`;
+                }
+
+                deleteCodeInput.value = '';
+                confirmDeleteButton.disabled = true;
+                confirmationModal.classList.add('show');
+                deleteCodeInput.focus();
+            }
+
+            function hideConfirmationModal() {
+                confirmationModal.classList.remove('show');
+                itemToDeleteId = null;
+                deleteType = null;
+                deleteCodeInput.value = '';
+                confirmDeleteButton.disabled = true;
+            }
+
+            function showEasterEggModal(count) {
+                let basketballs = '🏀'.repeat(count);
+                basketballsDisplay.textContent = basketballs;
+                easterEggModal.classList.add('show');
+            }
+
+            function hideEasterEggModal() {
+                easterEggModal.classList.remove('show');
+                basketballsDisplay.textContent = '';
+            }
+
+            function showRewardModal(link) {
+                currentRewardLink = link;
+                if (link === null) { // If link is null, it means score is too low
+                    viewRewardButton.disabled = true;
+                    viewRewardButton.style.opacity = '0.6';
+                    viewRewardButton.style.cursor = 'not-allowed';
+                } else {
+                    viewRewardButton.disabled = false;
+                    viewRewardButton.style.opacity = '1';
+                    viewRewardButton.style.cursor = 'pointer';
+                }
+                rewardModal.classList.add('show');
+            }
+
+            function hideRewardModal() {
+                rewardModal.classList.remove('show');
+                currentRewardLink = '';
+            }
+
+            // --- Hamburger Menu Toggle Function ---
+            function toggleHamburgerMenu() {
+                isHamburgerMenuExpanded = !isHamburgerMenuExpanded;
+                if (isHamburgerMenuExpanded) {
+                    hamburgerMenuContainer.classList.add('show');
+                    toggleHamburgerMenuButton.innerHTML = `
+                        <!-- X icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                        </svg>
+                    `;
+                    ignoreNextDocumentClick = true; // Set flag to true when opening
+                } else {
+                    jumpToContent.classList.remove('expanded');
+                    jumpToHeader.classList.remove('expanded');
+                    addCustomTextContent.classList.remove('expanded');
+                    addCustomTextHeader.classList.remove('expanded');
+                    rewardLinksContent.classList.remove('expanded');
+                    rewardLinksHeader.classList.remove('expanded');
+
+                    hamburgerMenuContainer.classList.remove('show');
+                    toggleHamburgerMenuButton.innerHTML = `
+                        <!-- Hamburger menu icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu">
+                            <line x1="4" x2="20" y1="12" y2="12"/>
+                            <line x1="4" x2="20" y1="6" y2="6"/>
+                            <line x1="4" x2="20" y1="18" y2="18"/>
+                        </svg>
+                    `;
+                }
+            }
+
+            // Centralized function for handling clicks outside menus
+            document.addEventListener('click', (event) => {
+                // If the flag is true, it means the click originated from the hamburger button itself,
+                // so we ignore this document click to prevent immediate closing.
+                if (ignoreNextDocumentClick) {
+                    ignoreNextDocumentClick = false; // Reset the flag
+                    return;
+                }
+
+                // Close dot menus if clicked outside
+                document.querySelectorAll('.dot-menu-dropdown.show').forEach(menu => {
+                    const isClickInsideMenu = menu.contains(event.target);
+                    const isClickOnButton = menu.previousElementSibling && menu.previousElementSibling.contains(event.target);
+                    if (!isClickInsideMenu && !isClickOnButton) {
+                        menu.classList.remove('show');
+                    }
+                });
+
+                // Close hamburger menu if clicked outside
+                const isClickInsideHamburgerMenu = hamburgerMenuContainer.contains(event.target);
+                const isClickOnHamburgerButton = toggleHamburgerMenuButton.contains(event.target);
+                if (isHamburgerMenuExpanded && !isClickInsideHamburgerMenu && !isClickOnHamburgerButton) {
+                    toggleHamburgerMenu(); // This will also remove the listener
+                }
+            });
+
+            // Function to render the "Jump to" options dynamically
+            function renderJumpToMenu() {
+                jumpToOptions.innerHTML = '';
+                shortcuts.forEach((shortcut) => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = shortcut.nickname;
+                    listItem.addEventListener('click', () => {
+                        jumpToShortcut(shortcut.nickname);
+                    });
+                    jumpToOptions.appendChild(listItem);
+                });
+            }
+
+            // Accordion-like toggle for menu sections
+            function toggleMenuSection(header, content) {
+                const isExpanded = content.classList.contains('expanded');
+                if (isExpanded) {
+                    content.classList.remove('expanded');
+                    header.classList.remove('expanded');
+                } else {
+                    document.querySelectorAll('.menu-section-content.expanded').forEach(openContent => {
+                        openContent.classList.remove('expanded');
+                        openContent.previousElementSibling.classList.remove('expanded');
+                    });
+                    content.classList.add('expanded');
+                    header.classList.add('expanded');
+                }
+            }
+
+            function renderShortcuts() {
+                renderAllShortcuts(); // Now renders ALL cards
+                if (shortcuts.length > 0) {
+                    scrollToShortcut(currentShortcutIndex); // Then scrolls to the current one
+                }
+            }
+
+            // --- Easter Egg Animation Functions ---
+            function cleanupEasterEggElements() {
+                activeEasterEggElements.forEach(item => {
+                    if (item.intervalId) clearInterval(item.intervalId);
+                    if (item.clone && item.clone.parentNode) item.clone.parentNode.removeChild(item.clone);
+                    if (item.originalEmojiElement) item.originalEmojiElement.classList.remove('hidden-original-emoji');
+                });
+                activeEasterEggElements = [];
+                isAnyEasterEggActive = false;
+                renderShortcuts();
+            }
+
+            const EASTER_EGG_DURATION = 7500;
+
+            function startGlobalEmojiCrawl(shortcutId) {
+                if (isAnyEasterEggActive) return;
+                const shortcut = shortcuts.find(s => s.id === shortcutId);
+                if (!shortcut || !shortcut.isEasterEggReady) {
+                    return;
+                }
+
+                isAnyEasterEggActive = true;
+                
+                const emojisToCrawl = Array.from(new Set(Array.from(ALL_USED_EMOJIS).filter(emoji => ANIMAL_EMOJIS.has(emoji))));
+                
+                if (emojisToCrawl.length === 0) {
+                    showMessage("ক্রল করার জন্য কোনো ইমোজি নেই।", 'error');
+                    cleanupEasterEggElements();
+                    return;
+                }
+
+                activeEasterEggElements = [];
+                emojisToCrawl.forEach(emojiText => {
+                    const clone = document.createElement('div');
+                    clone.textContent = emojiText;
+                    clone.classList.add('easter-egg-emoji', 'crawling-clone');
+                    
+                    clone.style.left = `${Math.random() * (window.innerWidth - 100)}px`;
+                    clone.style.top = `${Math.random() * (window.innerHeight - 100)}px`;
+                    clone.style.opacity = '1';
+                    document.body.appendChild(clone);
+
+                    const intervalId = setInterval(() => {
+                        const newX = Math.random() * (window.innerWidth - clone.offsetWidth);
+                        const newY = Math.random() * (window.innerHeight - clone.offsetHeight);
+                        clone.style.left = `${newX}px`;
+                        clone.style.top = `${newY}px`;
+                    }, 1000);
+
+                    activeEasterEggElements.push({ clone, originalEmojiElement: null, intervalId });
+                });
+                
+                setTimeout(cleanupEasterEggElements, 5000);
+            }
+
+            function startIndividualEmojiCrawl(shortcutId) {
+                if (isAnyEasterEggActive) return;
+
+                const shortcut = shortcuts.find(s => s.id === shortcutId);
+                if (!shortcut || !ANIMAL_EMOJIS.has(shortcut.emoji.trim()) || !shortcut.isEasterEggReady) {
+                    return;
+                }
+
+                isAnyEasterEggActive = true;
+                
+                activeEasterEggElements = [];
+                const originalEmojiElement = document.querySelector(`.short-card[data-id="${shortcutId}"] .emoji`);
+                
+                if (originalEmojiElement) {
+                    const rect = originalEmojiElement.getBoundingClientRect();
+                    
+                    const clone = document.createElement('div');
+                    clone.textContent = originalEmojiElement.textContent;
+                    clone.classList.add('easter-egg-emoji', 'crawling-clone');
+                    clone.style.left = `${rect.left}px`;
+                    clone.style.top = `${rect.top}px`;
+                    clone.style.opacity = '1';
+                    document.body.appendChild(clone);
+
+                    originalEmojiElement.classList.add('hidden-original-emoji');
+
+                    const intervalId = setInterval(() => {
+                        const newX = Math.random() * (window.innerWidth - clone.offsetWidth);
+                        const newY = Math.random() * (window.innerHeight - clone.offsetHeight);
+                        clone.style.left = `${newX}px`;
+                        clone.style.top = `${newY}px`;
+                    }, 1000);
+
+                    activeEasterEggElements.push({ clone, originalEmojiElement, intervalId });
+                }
+                renderShortcuts();
+
+                setTimeout(cleanupEasterEggElements, 5000);
+            }
+
+            function startVerticalEmojiRain(shortcutId) {
+                if (isAnyEasterEggActive) return;
+                const shortcut = shortcuts.find(s => s.id === shortcutId);
+                if (!shortcut || !shortcut.isEasterEggReady) return;
+
+                isAnyEasterEggActive = true;
+                renderShortcuts();
+                
+                const emojis = Array.from(ALL_USED_EMOJIS);
+                const numEmojisToSpawn = 20;
+                let spawnedCount = 0;
+
+                const spawnInterval = setInterval(() => {
+                    if (spawnedCount >= numEmojisToSpawn) {
+                        clearInterval(spawnInterval);
+                        return;
+                    }
+
+                    const emoji = document.createElement('div');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.classList.add('easter-egg-emoji', 'vertical-rain-emoji');
+                    
+                    const startX = Math.random() * window.innerWidth;
+                    emoji.style.left = `${startX}px`;
+                    emoji.style.setProperty('--x-offset', `${(Math.random() - 0.5) * 200}px`);
+                    emoji.style.opacity = '1';
+
+                    document.body.appendChild(emoji);
+                    activeEasterEggElements.push({ clone: emoji, originalEmojiElement: null, intervalId: null });
+
+                    spawnedCount++;
+                }, EASTER_EGG_DURATION / numEmojisToSpawn);
+
+                setTimeout(() => {
+                    clearInterval(spawnInterval);
+                    cleanupEasterEggElements();
+                }, EASTER_EGG_DURATION);
+            }
+
+            function startEmojiDance(shortcutId) {
+                if (isAnyEasterEggActive) return;
+                const shortcut = shortcuts.find(s => s.id === shortcutId);
+                if (!shortcut || !shortcut.isEasterEggReady) return;
+
+                isAnyEasterEggActive = true;
+                renderShortcuts();
+
+                const emojis = Array.from(ALL_USED_EMOJIS);
+                const numEmojis = 8;
+
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                const radius = 100;
+
+                for (let i = 0; i < numEmojis; i++) {
+                    const emoji = document.createElement('div');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.classList.add('easter-egg-emoji', 'dance-emoji');
+                    
+                    const angle = (i / numEmojis) * 2 * Math.PI;
+                    emoji.style.left = `${centerX + radius * Math.cos(angle) - emoji.offsetWidth / 2}px`;
+                    emoji.style.top = `${centerY + radius * Math.sin(angle) - emoji.offsetHeight / 2}px`;
+                    emoji.style.opacity = '1';
+                    
+                    document.body.appendChild(emoji);
+                    activeEasterEggElements.push({ clone: emoji, originalEmojiElement: null, intervalId: null });
+                }
+
+                setTimeout(cleanupEasterEggElements, EASTER_EGG_DURATION);
+            }
+
+            // --- Event Listeners ---
+            speakButton.addEventListener('click', () => {
+                const text = textInput.value.trim();
+                if (text) {
+                    speakText(text, null); 
+                } else {
+                    showMessage("বলার জন্য কিছু টেক্সট লিখুন।", 'error');
+                }
+            });
+
+            addShortcutButton.addEventListener('click', () => {
+                const text = textInput.value.trim();
+                if (text) {
+                    // Use values from the custom section's inputs
+                    const nickname = nicknameInputFromCustomSection.value.trim();
+                    const emoji = emojiInputFromCustomSection.value.trim();
+
+                    if (!nickname) {
+                        showMessage("ডাকনাম খালি রাখা যাবে না।", 'error');
+                        return;
+                    }
+                    if (shortcuts.some(s => s.text === text && !s.isDefault)) {
+                        showMessage(`"${text}" ইতিমধ্যে একটি শর্টকাট।`, 'error');
+                        textInput.value = '';
+                        nicknameInputFromCustomSection.value = '';
+                        emojiInputFromCustomSection.value = '';
+                        return;
+                    }
+                    if (shortcuts.some(s => s.nickname === nickname && !s.isDefault)) {
+                        showMessage(`"${nickname}" নামে একটি শর্টকাট ইতিমধ্যে বিদ্যমান।`, 'error');
+                        return;
+                    }
+
+                    const newShortcut = { id: crypto.randomUUID(), text: text, nickname: nickname, emoji: emoji || null, isDefault: false, isTextPlayed: false, isRhymePlayed: false, isEasterEggReady: false, rhyme: null };
+                    shortcuts.push(newShortcut);
+                    currentShortcutIndex = shortcuts.findIndex(s => s.id === newShortcut.id);
+                    renderShortcuts();
+                    saveShortcuts();
+                    showMessage(`"${nickname}" একটি শর্টকাট হিসেবে যোগ করা হয়েছে!`);
+                    textInput.value = '';
+                    nicknameInputFromCustomSection.value = '';
+                    emojiInputFromCustomSection.value = '';
+                } else {
+                    showMessage("শর্টকাট হিসেবে যোগ করার জন্য ইনপুট ফিল্ডে টেক্সট লিখুন।", 'error');
+                }
+            });
+
+            // Reward Link Event Listeners
+            addRewardLinkButton.addEventListener('click', () => {
+                const link = rewardLinkInput.value.trim();
+                if (link) {
+                    if (rewardLinks.includes(link)) {
+                        showMessage("এই লিঙ্কটি ইতিমধ্যেই তালিকায় আছে।", 'error');
+                        return;
+                    }
+                    try {
+                        new URL(link); // Basic validation
+                        rewardLinks.push(link);
+                        saveRewardLinks();
+                        renderRewardLinks();
+                        rewardLinkInput.value = '';
+                        showMessage("লিঙ্ক সফলভাবে যোগ করা হয়েছে!");
+                    } catch (_) {
+                        showMessage("অনুগ্রহ করে একটি সঠিক URL দিন।", 'error');
+                    }
+                } else {
+                    showMessage("অনুগ্রহ করে একটি লিঙ্ক লিখুন।", 'error');
+                }
+            });
+
+            saveEmojiButton.addEventListener('click', () => {
+                // This logic is now redundant if addShortcutButton directly adds.
+                // Keeping it here in case the modal is triggered by other means.
+                const text = textInput.value.trim(); // Assuming textInput still holds the main text
+                const nickname = nicknameInputModal.value.trim();
+                const emoji = emojiInputModal.value.trim();
+                
+                if (!nickname) {
+                    showMessage("ডাকনাম খালি রাখা যাবে না।", 'error');
+                    return;
+                }
+                if (shortcuts.some(s => s.nickname === nickname && !s.isDefault)) {
+                    showMessage(`"${nickname}" নামে একটি শর্টকাট ইতিমধ্যে বিদ্যমান।`, 'error');
+                    return;
+                }
+
+                const newShortcut = { id: crypto.randomUUID(), text: text, nickname: nickname, emoji: emoji || null, isDefault: false, isTextPlayed: false, isRhymePlayed: false, isEasterEggReady: false, rhyme: null };
+                shortcuts.push(newShortcut);
+                currentShortcutIndex = shortcuts.findIndex(s => s.id === newShortcut.id);
+                renderShortcuts();
+                saveShortcuts();
+                showMessage(`"${nickname}" একটি শর্টকাট হিসেবে যোগ করা হয়েছে!`);
+                textInput.value = '';
+                nicknameInputFromCustomSection.value = ''; // Clear custom section inputs too
+                emojiInputFromCustomSection.value = '';
+                hideEmojiModal();
+            });
+
+            cancelEmojiButton.addEventListener('click', () => {
+                hideEmojiModal();
+            });
+
+            deleteCodeInput.addEventListener('input', () => {
+                confirmDeleteButton.disabled = (deleteCodeInput.value !== DELETE_CODE);
+            });
+
+            confirmDeleteButton.addEventListener('click', () => {
+                if (deleteCodeInput.value !== DELETE_CODE) {
+                    showMessage("ভুল কোড প্রবেশ করানো হয়েছে।", 'error');
+                    return;
+                }
+
+                if (deleteType === 'shortcut' && itemToDeleteId) {
+                    const deletedIndex = shortcuts.findIndex(s => s.id === itemToDeleteId);
+                    shortcuts = shortcuts.filter(s => s.id !== itemToDeleteId);
+
+                    if (deletedIndex <= currentShortcutIndex && currentShortcutIndex > 0) {
+                        currentShortcutIndex--;
+                    }
+                    if (shortcuts.length === 0) {
+                        currentShortcutIndex = 0;
+                    } else if (currentShortcutIndex >= shortcuts.length) {
+                        currentShortcutIndex = shortcuts.length - 1;
+                    }
+
+                    renderShortcuts();
+                    saveShortcuts();
+                    showMessage(`শর্টকাটটি মুছে ফেলা হয়েছে।`);
+
+                } else if (deleteType === 'reward' && itemToDeleteId !== null) {
+                    rewardLinks.splice(itemToDeleteId, 1);
+                    saveRewardLinks();
+                    renderRewardLinks();
+                    showMessage(`পুরস্কারের লিঙ্ক মুছে ফেলা হয়েছে।`);
+                }
+
+                hideConfirmationModal();
+            });
+
+            cancelDeleteButton.addEventListener('click', () => {
+                hideConfirmationModal();
+            });
+
+            closeEasterEggModal.addEventListener('click', () => {
+                hideEasterEggModal();
+            });
+
+            viewRewardButton.addEventListener('click', () => {
+                if (currentRewardLink) {
+                    window.open(currentRewardLink, '_blank');
+                    hideRewardModal();
+                }
+            });
+
+            closeRewardModal.addEventListener('click', () => {
+                hideRewardModal();
+            });
+
+            susovonPalPlayButton.addEventListener('click', () => {
+                const randomIndex = Math.floor(Math.random() * SUSOVON_PAL_PHRASES.length);
+                speakText(SUSOVON_PAL_PHRASES[randomIndex], null);
+            });
+
+            toggleHamburgerMenuButton.addEventListener('click', toggleHamburgerMenu);
+
+            jumpToHeader.addEventListener('click', () => {
+                toggleMenuSection(jumpToHeader, jumpToContent);
+            });
+
+            rewardLinksHeader.addEventListener('click', () => {
+                toggleMenuSection(rewardLinksHeader, rewardLinksContent);
+            });
+
+            addCustomTextHeader.addEventListener('click', () => {
+                toggleMenuSection(addCustomTextHeader, addCustomTextContent);
+            });
+
+            forgottenButton.addEventListener('click', () => {
+                if (!lastSpokenShortcutId || shortcuts.length === 0) {
+                    showMessage("কোনো শেষ প্লে করা শর্টকাট নেই।", 'error');
+                    return;
+                }
+                const lastSpokenIndex = shortcuts.findIndex(s => s.id === lastSpokenShortcutId);
+                if (lastSpokenIndex === -1) {
+                    showMessage("শেষ প্লে করা শর্টকাট পাওয়া যায়নি।", 'error');
+                    return;
+                }
+                const expectedNextIndex = (lastSpokenIndex + 1) % shortcuts.length;
+                scrollToShortcut(expectedNextIndex);
+            });
+
+
+            // Initial setup
+            loadRewardLinks(); // Load rewards first
+            loadShortcuts();
+            
+            const lastSpokenIdOnLoad = localStorage.getItem(LOCAL_STORAGE_LAST_SPOKEN_ID);
+            if (lastSpokenIdOnLoad) {
+                const lastIndexOnLoad = shortcuts.findIndex(s => s.id === lastSpokenIdOnLoad);
+                if (lastIndexOnLoad !== -1) {
+                    // Set currentShortcutIndex to the one *after* the last spoken on load
+                    currentShortcutIndex = (lastIndexOnLoad + 1) % shortcuts.length;
+                }
+            }
+            renderShortcuts(); // This will now render all cards and scroll to the current one
+
+            speechSynthesis.onvoiceschanged = () => {
+                console.log("ভয়েসগুলি পরিবর্তিত/লোড হয়েছে।");
+            };
+        };
+    </script>
+</body>
+</html>

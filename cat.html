@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn Bengali</title>
+    <style>
+        :root {
+            --bg-color: #FFFDE7;
+            --text-color: #424242;
+            --header-bg: #FFFFFF;
+            --border-color: #FFF59D;
+            
+            --primary-yellow: #FFEB3B;
+            --primary-yellow-hover: #FDD835;
+            --primary-yellow-active: #FBC02D;
+            
+            --card-bg: #FFFFFF;
+            --btn-bg: #FFFFFF;
+            
+            --success-color: #81C784;
+            --error-color: #E57373;
+            
+            --shadow-sm: 0 4px 12px rgba(253, 216, 53, 0.15);
+            --shadow-md: 0 8px 24px rgba(253, 216, 53, 0.2);
+            
+            --squircle-sm: 16px;
+            --squircle-md: 24px;
+            --squircle-lg: 32px;
+            
+            --font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: var(--header-bg);
+            border-bottom: 2px solid var(--border-color);
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+            border-bottom-left-radius: var(--squircle-md);
+            border-bottom-right-radius: var(--squircle-md);
+        }
+
+        .filter-container {
+            max-width: 650px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0.75rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 0.5rem;
+            scrollbar-width: none;
+        }
+        
+        .filter-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-btn {
+            flex-shrink: 0;
+            background-color: var(--btn-bg);
+            color: var(--text-color);
+            border: 2px solid var(--primary-yellow);
+            padding: 0.6rem 1.5rem;
+            border-radius: var(--squircle-md);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: capitalize;
+            white-space: nowrap;
+        }
+
+        .filter-btn:hover {
+            background-color: #FFFDE7;
+        }
+
+        .filter-btn.active {
+            background-color: var(--primary-yellow);
+            border-color: var(--primary-yellow);
+            box-shadow: var(--shadow-sm);
+            color: #000;
+        }
+
+        main {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .quiz-card {
+            background-color: var(--card-bg);
+            width: 100%;
+            padding: 2rem;
+            border-radius: var(--squircle-lg);
+            box-shadow: var(--shadow-md);
+            text-align: center;
+            border: 2px solid #FFF9C4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .top-play-btn {
+            background-color: var(--primary-yellow);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: var(--squircle-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .top-play-btn:hover {
+            background-color: var(--primary-yellow-hover);
+            transform: translateY(-2px);
+        }
+
+        .top-play-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .top-play-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #000;
+        }
+
+        .question-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            width: 100%;
+        }
+
+        .question-text {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #212121;
+        }
+
+        .question-text span {
+            color: #F57F17;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: stretch;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .option-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .option-btn {
+            width: 100%;
+            flex: 1;
+            background-color: var(--btn-bg);
+            border: 2px solid var(--border-color);
+            padding: 2rem 1rem;
+            border-radius: var(--squircle-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .option-emoji {
+            font-size: 4rem;
+            line-height: 1;
+            transition: transform 0.2s ease;
+        }
+
+        .option-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary-yellow);
+            background-color: var(--bg-color);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .option-btn:hover:not(:disabled) .option-emoji {
+            transform: scale(1.1);
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+        }
+        
+        /* Kids mode lock styles */
+        .option-btn.kids-locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #fafafa !important;
+            border-color: #eeeeee !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .option-btn.kids-locked .option-emoji {
+            filter: grayscale(100%);
+            opacity: 0.6;
+        }
+
+        .audio-btn {
+            background-color: #FFFDE7;
+            border: 2px solid var(--border-color);
+            border-radius: var(--squircle-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        
+        .question-audio-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            padding: 10px;
+        }
+
+        .option-audio-btn {
+            width: 100%;
+            height: 48px;
+            order: -1;
+        }
+
+        .audio-btn:hover {
+            background-color: var(--primary-yellow);
+            border-color: var(--primary-yellow);
+        }
+        
+        .audio-btn:active {
+            transform: scale(0.95);
+        }
+
+        .audio-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: #F57F17;
+            transition: fill 0.2s ease;
+        }
+        
+        .audio-btn:hover svg {
+            fill: #000;
+        }
+
+        .option-wrapper.correct .option-btn {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(129, 199, 132, 0.4);
+        }
+        
+        .option-wrapper.correct .option-audio-btn {
+             border-color: var(--success-color);
+        }
+
+        .option-wrapper.incorrect .option-btn {
+            background-color: var(--error-color);
+            border-color: var(--error-color);
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .option-wrapper.incorrect .option-audio-btn {
+             border-color: var(--error-color);
+             opacity: 0.8;
+        }
+
+        .filter-btn.list-btn {
+            margin-left: auto;
+            background-color: #fff8e1;
+            border-color: var(--primary-yellow);
+        }
+
+        /* List view styles */
+        #list-view {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem 2rem;
+        }
+
+        #list-view.visible {
+            display: flex;
+        }
+
+        .list-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: var(--squircle-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            border: 2px solid #FFF9C4;
+        }
+
+        .list-table thead tr {
+            background-color: var(--primary-yellow);
+        }
+
+        .list-table th {
+            padding: 0.85rem 1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: left;
+            color: #000;
+        }
+
+        .list-table th:last-child,
+        .list-table td:last-child {
+            text-align: center;
+        }
+
+        .list-table tbody tr {
+            border-top: 1px solid #FFF9C4;
+            transition: background 0.15s;
+        }
+
+        .list-table tbody tr:hover {
+            background-color: #FFFDE7;
+        }
+
+        .list-table td {
+            padding: 0.7rem 1rem;
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+
+        .list-table td.emoji-cell {
+            font-size: 1.5rem;
+        }
+
+        .list-table td.bn-cell {
+            font-weight: 600;
+        }
+
+        .list-category-heading {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #F57F17;
+            background: #FFFDE7 !important;
+            padding: 0.5rem 1rem !important;
+        }
+
+        /* List Format for Questions */
+        .questions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .list-question-item {
+            background: #fff;
+            border: 2px solid #FFF59D;
+            border-radius: var(--squircle-md);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            text-align: left;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .list-question-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .list-question-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #212121;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .list-question-options {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .list-opt {
+            font-size: 0.95rem;
+            font-weight: 700;
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--squircle-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .list-opt.correct {
+            background-color: #E8F5E9;
+            color: #2E7D32;
+            border: 1px solid #A5D6A7;
+        }
+
+        .list-opt.incorrect {
+            background-color: #FFEBEE;
+            color: #C62828;
+            border: 1px solid #EF9A9A;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    
+    <canvas id="confetti-canvas"></canvas>
+
+    <header>
+        <div class="filter-container" id="filter-container">
+            <button class="filter-btn active" data-filter="kids">Kids Mode</button>
+            <button class="filter-btn" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="questions">Questions</button>
+            <button class="filter-btn" data-filter="animals">Animals</button>
+            <button class="filter-btn" data-filter="trees">Trees</button>
+            <button class="filter-btn" data-filter="human">Human</button>
+            <button class="filter-btn" data-filter="others">Others</button>
+            <button class="filter-btn list-btn" id="list-toggle-btn">📋 List</button>
+        </div>
+    </header>
+
+    <div id="list-view">
+        <div id="list-table-wrapper">
+            <table class="list-table">
+                <thead>
+                    <tr>
+                        <th>English</th>
+                        <th>বাংলা</th>
+                        <th>Emoji</th>
+                    </tr>
+                </thead>
+                <tbody id="list-tbody"></tbody>
+            </table>
+        </div>
+        <div id="list-questions-container" class="questions-list"></div>
+    </div>
+
+    <main>
+        <div class="quiz-card" id="quiz-card">
+            
+            <button class="top-play-btn" id="top-play-btn">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                Play Audio
+            </button>
+
+            <div class="question-container">
+                <div class="question-text" id="question-text"></div>
+                <button class="audio-btn question-audio-btn" id="question-audio" aria-label="Play question audio">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="options-container" id="options-container"></div>
+            
+
+        </div>
+    </main>
+
+    <script>
+        const vocabData = [
+            // --- Animals ---
+            { en: "Animal", bn: "পশুপাখি", emoji: "🦁", category: "animals" },
+            { en: "Dog", bn: "কুকুর", emoji: "🐶", category: "animals" },
+            { en: "Cat", bn: "বিড়াল", emoji: "🐱", category: "animals" },
+            { en: "Cow", bn: "গরু", emoji: "🐮", category: "animals" },
+            { en: "Buffalo", bn: "মহিষ", emoji: "🐂", category: "animals" },
+            { en: "Goat", bn: "ছাগল", emoji: "🐐", category: "animals" },
+            { en: "Sheep", bn: "ভেড়া", emoji: "🐑", category: "animals" },
+            { en: "Horse", bn: "ঘোড়া", emoji: "🐴", category: "animals" },
+            { en: "Donkey", bn: "গাধা", emoji: "", category: "animals" },
+            { en: "Camel", bn: "উট", emoji: "🐫", category: "animals" },
+            { en: "Elephant", bn: "হাতি", emoji: "🐘", category: "animals" },
+            { en: "Monkey", bn: "বানর", emoji: "🐒", category: "animals" },
+            { en: "Tiger", bn: "বাঘ", emoji: "🐯", category: "animals" },
+            { en: "Lion", bn: "সিংহ", emoji: "🦁", category: "animals" },
+            { en: "Bear", bn: "ভালুক", emoji: "🐻", category: "animals" },
+            { en: "Rabbit", bn: "খরগোশ", emoji: "🐰", category: "animals" },
+            { en: "Mouse", bn: "ইঁদুর", emoji: "🐭", category: "animals" },
+            { en: "Pig", bn: "শূকর", emoji: "🐷", category: "animals" },
+            { en: "Deer", bn: "হরিণ", emoji: "", category: "animals" },
+            { en: "Chicken", bn: "মুরগি", emoji: "🐔", category: "animals" },
+            { en: "Rooster", bn: "মোরগ", emoji: "🐓", category: "animals" },
+            { en: "Duck", bn: "হাঁস", emoji: "🐤", category: "animals" },
+            { en: "Swan", bn: "রাজহাঁস", emoji: "🐦", category: "animals" },
+            { en: "Pigeon", bn: "পায়রা", emoji: "🕊", category: "animals" },
+            { en: "Crow", bn: "কাক", emoji: "🐦", category: "animals" },
+            { en: "Parrot", bn: "টিয়া", emoji: "🐦", category: "animals" },
+            { en: "Peacock", bn: "ময়ূর", emoji: "🐦", category: "animals" },
+            { en: "Owl", bn: "পেঁচা", emoji: "🐦", category: "animals" },
+            { en: "Eagle", bn: "ঈগল", emoji: "🦅", category: "animals" },
+            { en: "Snake", bn: "সাপ", emoji: "🐍", category: "animals" },
+            { en: "Crocodile", bn: "কুমির", emoji: "🐊", category: "animals" },
+            { en: "Turtle", bn: "কচ্ছপ", emoji: "🐢", category: "animals" },
+            { en: "Lizard", bn: "টিকটিকি", emoji: "", category: "animals" },
+            { en: "Frog", bn: "ব্যাঙ", emoji: "🐸", category: "animals" },
+            { en: "Fish", bn: "মাছ", emoji: "🐟", category: "animals" },
+            { en: "Shark", bn: "হাঙর", emoji: "🐟", category: "animals" },
+            { en: "Whale", bn: "তিমি", emoji: "🐋", category: "animals" },
+            { en: "Crab", bn: "কাঁকড়া", emoji: "🦀", category: "animals" },
+            { en: "Shrimp", bn: "চিংড়ি", emoji: "🦐", category: "animals" },
+            { en: "Ant", bn: "পিঁপড়া", emoji: "🐜", category: "animals" },
+            { en: "Bee", bn: "মৌমাছি", emoji: "🐝", category: "animals" },
+            { en: "Butterfly", bn: "প্রজাপতি", emoji: "🦋", category: "animals" },
+            { en: "Ladybug", bn: "গুবরে পোকা", emoji: "🐞", category: "animals" },
+            { en: "Spider", bn: "মাকড়সা", emoji: "🕷", category: "animals" },
+            { en: "Mosquito", bn: "মশা", emoji: "", category: "animals" },
+            { en: "Fly", bn: "মাছি", emoji: "", category: "animals" },
+            { en: "Worm", bn: "কেঁচো", emoji: "🐛", category: "animals" },
+            { en: "Snail", bn: "শামুক", emoji: "🐌", category: "animals" },
+            { en: "Scorpion", bn: "কাঁকড়াবিছা", emoji: "🦂", category: "animals" },
+
+            // --- Human ---
+            { en: "Human", bn: "মানুষ", emoji: "🧑", category: "human" },
+            { en: "Boy", bn: "ছেলে", emoji: "👦", category: "human" },
+            { en: "Girl", bn: "মেয়ে", emoji: "👧", category: "human" },
+            { en: "Baby", bn: " শিশু ", emoji: "👶", category: "human" },
+            { en: "Head", bn: "মাথা", emoji: "", category: "human" },
+            { en: "Hair", bn: "চুল", emoji: "", category: "human" },
+            { en: "Forehead", bn: "কপাল", emoji: "", category: "human" },
+            { en: "Eye", bn: "চোখ", emoji: "👁", category: "human" },
+            { en: "Eyebrow", bn: "ভ্রু", emoji: "", category: "human" },
+            { en: "Eyelash", bn: "চোখের পাতা", emoji: "", category: "human" },
+            { en: "Ear", bn: "কান", emoji: "👂", category: "human" },
+            { en: "Nose", bn: "নাক", emoji: "👃", category: "human" },
+            { en: "Cheek", bn: "গাল", emoji: "", category: "human" },
+            { en: "Mouth", bn: "মুখ", emoji: "👄", category: "human" },
+            { en: "Lip", bn: "ঠোঁট", emoji: "", category: "human" },
+            { en: "Tongue", bn: "জিহ্বা", emoji: "👅", category: "human" },
+            { en: "Tooth", bn: "দাঁত", emoji: "", category: "human" },
+            { en: "Chin", bn: "থুতনি", emoji: "", category: "human" },
+            { en: "Neck", bn: "গলা", emoji: "", category: "human" },
+            { en: "Shoulder", bn: "কাঁধ", emoji: "", category: "human" },
+            { en: "Arm", bn: "বাহু", emoji: "💪", category: "human" },
+            { en: "Elbow", bn: "কনুই", emoji: "", category: "human" },
+            { en: "Hand", bn: "হাত", emoji: "✋", category: "human" },
+            { en: "Finger", bn: "আঙুল", emoji: "☝", category: "human" },
+            { en: "Thumb", bn: "বুড়ো আঙুল", emoji: "👍", category: "human" },
+            { en: "Nail", bn: "নখ", emoji: "", category: "human" },
+            { en: "Chest", bn: "বুক", emoji: "", category: "human" },
+            { en: "Back", bn: "পিঠ", emoji: "", category: "human" },
+            { en: "Waist", bn: "কোমর", emoji: "", category: "human" },
+            { en: "Leg", bn: "পা", emoji: "👣", category: "human" },
+            { en: "Knee", bn: "হাঁটু", emoji: "", category: "human" },
+            { en: "Ankle", bn: "গোড়ালি", emoji: "", category: "human" },
+            { en: "Foot", bn: "পায়ের পাতা", emoji: "👣", category: "human" },
+            { en: "Toe", bn: "পায়ের আঙুল", emoji: "", category: "human" },
+            { en: "Heel", bn: "গোড়ালি", emoji: "", category: "human" },
+            { en: "Skin", bn: "ত্বক", emoji: "", category: "human" },
+            
+            // --- Trees & Plants ---
+            { en: "Tree", bn: "গাছ", emoji: "🌳", category: "trees" },
+            { en: "Palm Tree", bn: "তালগাছ", emoji: "🌴", category: "trees" },
+            { en: "Coconut Tree", bn: "নারকেল গাছ", emoji: "🌴", category: "trees" },
+            { en: "Banana Plant", bn: "কলাগাছ", emoji: "🌴", category: "trees" },
+            { en: "Bamboo", bn: "বাঁশ", emoji: "🌿", category: "trees" },
+            { en: "Grass", bn: "ঘাস", emoji: "🌿", category: "trees" },
+            { en: "Moss", bn: "শ্যাওলা", emoji: "🌿", category: "trees" },
+            { en: "Cactus", bn: "কাঁটাগাছ", emoji: "🌵", category: "trees" },
+            { en: "Bush", bn: "ঝোপ", emoji: "🌿", category: "trees" },
+            { en: "Holy Basil", bn: "তুলসী", emoji: "🌿", category: "trees" },
+            { en: "Mint", bn: "পুদিনা", emoji: "🌿", category: "trees" },
+            { en: "Neem", bn: "নিম", emoji: "🌳", category: "trees" },
+            { en: "Mango Tree", bn: "আমগাছ", emoji: "🌳", category: "trees" },
+            { en: "Banyan Tree", bn: "বটগাছ", emoji: "🌳", category: "trees" },
+            { en: "Peepal Tree", bn: "অশ্বত্থ গাছ", emoji: "🌳", category: "trees" },
+            { en: "Teak Tree", bn: "সেগুন গাছ", emoji: "🌳", category: "trees" },
+            { en: "Rose", bn: "গোলাপ", emoji: "🌹", category: "trees" },
+            { en: "Hibiscus", bn: "জবা", emoji: "🌺", category: "trees" },
+            { en: "Sunflower", bn: "সূর্যমুখী", emoji: "🌻", category: "trees" },
+            { en: "Lotus", bn: "পদ্ম", emoji: "🌸", category: "trees" },
+            { en: "Jasmine", bn: "জুঁই", emoji: "🌸", category: "trees" },
+            { en: "Marigold", bn: "গাঁদা", emoji: "🌼", category: "trees" },
+            { en: "Lily", bn: "শাপলা", emoji: "🌸", category: "trees" },
+            { en: "Cherry Blossom", bn: "চেরি ফুল", emoji: "🌸", category: "trees" },
+            { en: "Flower", bn: "ফুল", emoji: "🌼", category: "trees" },
+            { en: "Bouquet", bn: "ফুলের তোড়া", emoji: "💐", category: "trees" },
+            { en: "Mango", bn: "আম", emoji: "", category: "trees" },
+            { en: "Banana", bn: "কলা", emoji: "🍌", category: "trees" },
+            { en: "Apple", bn: "আপেল", emoji: "🍎", category: "trees" },
+            { en: "Orange", bn: "কমলা", emoji: "🍊", category: "trees" },
+            { en: "Lemon", bn: "লেবু", emoji: "🍋", category: "trees" },
+            { en: "Watermelon", bn: "তরমুজ", emoji: "🍉", category: "trees" },
+            { en: "Grapes", bn: "আঙুর", emoji: "🍇", category: "trees" },
+            { en: "Pineapple", bn: "আনারস", emoji: "🍍", category: "trees" },
+            { en: "Coconut", bn: "নারকেল", emoji: "🥥", category: "trees" },
+            { en: "Guava", bn: "পেয়ারা", emoji: "🍏", category: "trees" },
+            { en: "Papaya", bn: "পেঁপে", emoji: "", category: "trees" },
+            { en: "Pomegranate", bn: "ডালিম", emoji: "", category: "trees" },
+            { en: "Litchi", bn: "লিচু", emoji: "", category: "trees" },
+            { en: "Jackfruit", bn: "কাঁঠাল", emoji: "", category: "trees" },
+            { en: "Pear", bn: "নাশপাতি", emoji: "🍐", category: "trees" },
+            { en: "Cucumber", bn: "শসা", emoji: "🥒", category: "trees" },
+            { en: "Chili", bn: "লঙ্কা", emoji: "🌶", category: "trees" },
+            { en: "Brinjal", bn: "বেগুন", emoji: "🍆", category: "trees" },
+            { en: "Corn", bn: "ভুট্টা", emoji: "🌽", category: "trees" },
+
+            // --- Colors ---
+            { en: "Red", bn: "লাল", emoji: "🔴", category: "others" },
+            { en: "Blue", bn: "নীল", emoji: "🔵", category: "others" },
+            { en: "Green", bn: "সবুজ", emoji: "💚", category: "others" },
+            { en: "Yellow", bn: "হলুদ", emoji: "💛", category: "others" },
+            { en: "Orange", bn: "কমলা", emoji: "🧡", category: "others" },
+            { en: "Purple", bn: "বেগুনি", emoji: "💜", category: "others" },
+            { en: "Black", bn: "কালো", emoji: "⚫", category: "others" },
+            { en: "White", bn: "সাদা", emoji: "⚪", category: "others" },
+            { en: "Brown", bn: "বাদামি", emoji: "", category: "others" },
+            { en: "Pink", bn: "গোলাপি", emoji: "🌸", category: "others" },
+            { en: "Gray", bn: "ধূসর", emoji: "", category: "others" },
+
+            // --- Transport ---
+            { en: "Car", bn: "গাড়ি", emoji: "🚗", category: "others" },
+            { en: "Boat", bn: "নৌকা", emoji: "🚣", category: "others" },
+            { en: "Ship", bn: "জাহাজ", emoji: "🚢", category: "others" },
+            { en: "Airplane", bn: "বিমান", emoji: "✈️", category: "others" },
+
+            // --- Nature ---
+            { en: "Mountain", bn: "পর্বত", emoji: "⛰", category: "others" },
+            { en: "Hill", bn: "পাহাড়", emoji: "🏔", category: "others" },
+            { en: "Valley", bn: "উপত্যকা", emoji: "", category: "others" },
+            { en: "Plain", bn: "সমভূমি", emoji: "", category: "others" },
+            { en: "Desert", bn: "মরুভূমি", emoji: "🏜", category: "others" },
+            { en: "Forest", bn: "বন", emoji: "🌲", category: "others" },
+            { en: "Island", bn: "দ্বীপ", emoji: "🏝", category: "others" },
+            { en: "Cave", bn: "গুহা", emoji: "", category: "others" },
+            { en: "River", bn: "নদী", emoji: "", category: "others" },
+            { en: "Pond", bn: "পুকুর", emoji: "", category: "others" },
+            { en: "Lake", bn: "হ্রদ", emoji: "", category: "others" },
+            { en: "Sea", bn: "সাগর", emoji: "", category: "others" },
+            { en: "Ocean", bn: "مহাসাগর", emoji: "", category: "others" },
+            { en: "Waterfall", bn: "ঝর্ণা", emoji: "🌊", category: "others" },
+            { en: "Well", bn: "কুয়ো", emoji: "", category: "others" },
+
+            // --- Tools ---
+            { en: "Hammer", bn: "হাতুড়ি", emoji: "🔨", category: "others" },
+            { en: "Axe", bn: "কুঠার", emoji: "", category: "others" },
+            { en: "Knife", bn: "ছুরি", emoji: "🔪", category: "others" },
+            { en: "Scissors", bn: "কাঁচি", emoji: "✂️", category: "others" },
+            { en: "Saw", bn: "করাত", emoji: "", category: "others" },
+            { en: "Rope", bn: "দড়ি", emoji: "", category: "others" },
+            { en: "Bucket", bn: "বালতি", emoji: "", category: "others" },
+
+            // --- Home ---
+            { en: "Spoon", bn: "চামচ", emoji: "🥄", category: "others" },
+            { en: "Fork", bn: "কাঁটা চামচ", emoji: "🍴", category: "others" },
+            { en: "Bed", bn: "বিছানা", emoji: "🛏", category: "others" },
+            { en: "Chair", bn: "চেয়ার", emoji: "", category: "others" },
+            { en: "Door", bn: "দরজা", emoji: "🚪", category: "others" },
+            { en: "Window", bn: "জানালা", emoji: "", category: "others" },
+            { en: "Fan", bn: "পাখা", emoji: "", category: "others" },
+            { en: "Clock", bn: "ঘড়ি", emoji: "🕒", category: "others" },
+            { en: "Book", bn: "বই", emoji: "📖", category: "others" },
+            { en: "Pen", bn: "কলম", emoji: "🖊", category: "others" },
+            { en: "Key", bn: "চাবি", emoji: "🔑", category: "others" },
+            { en: "Lock", bn: "তালা", emoji: "🔒", category: "others" },
+            { en: "Soap", bn: "সাবান", emoji: "", category: "others" },
+            { en: "Clothes", bn: "কাপড়", emoji: "👕", category: "others" },
+            { en: "Shoe", bn: "জুতা", emoji: "👟", category: "others" },
+
+            // --- Dedicated Questions Filter Mode ---
+            { questionText: "কোনটি ম্যাঁও ম্যাঁও করে?", bn: "বিড়াল", emoji: "🐱", category: "questions", isQuestion: true, options: [{ bn: "কুকুর", emoji: "🐶" }, { bn: "বিড়াল", emoji: "🐱" }] },
+            { questionText: "জঙ্গলের রাজা কে?", bn: "সিংহ", emoji: "🦁", category: "questions", isQuestion: true, options: [{ bn: "সিংহ", emoji: "🦁" }, { bn: "খরগোশ", emoji: "🐰" }] },
+            { questionText: "কোনটি জলে সাঁতার কাটে?", bn: "মাছ", emoji: "🐟", category: "questions", isQuestion: true, options: [{ bn: "মাছ", emoji: "🐟" }, { bn: "ঘোড়া", emoji: "" }] },
+            { questionText: "কোন ফলটি হলুদ রঙের?", bn: "কলা", emoji: "🍌", category: "questions", isQuestion: true, options: [{ bn: "কলা", emoji: "🍌" }, { bn: "আপেল", emoji: "🍎" }] },
+            { questionText: "কোন ফলের শক্ত খোসা আছে?", bn: "নারকেল", emoji: "🥥", category: "questions", isQuestion: true, options: [{ bn: "নারকেল", emoji: "🥥" }, { bn: "আঙুর", emoji: "🍇" }] },
+            { questionText: "কোন ফুলটি সাধারণত লাল?", bn: "গোলাপ", emoji: "🌹", category: "questions", isQuestion: true, options: [{ bn: "গোলাপ", emoji: "🌹" }, { bn: "সূর্যমুখী", emoji: "🌻" }] },
+            { questionText: "কোন গাছে কাঁটা থাকে?", bn: "কাঁটাগাছ", emoji: "🌵", category: "questions", isQuestion: true, options: [{ bn: "কাঁটাগাছ", emoji: "🌵" }, { bn: "ঘাস", emoji: "🌿" }] },
+            { questionText: "আমরা দেখি কী দিয়ে?", bn: "চোখ", emoji: "👁", category: "questions", isQuestion: true, options: [{ bn: "চোখ", emoji: "👁" }, { bn: "কান", emoji: "👂" }] },
+            { questionText: "আমরা শুনি কী দিয়ে?", bn: "কান", emoji: "👂", category: "questions", isQuestion: true, options: [{ bn: "নাক", emoji: "👃" }, { bn: "কান", emoji: "👂" }] },
+            { questionText: "ঘাসের রং কী?", bn: "সবুজ", emoji: "💚", category: "questions", isQuestion: true, options: [{ bn: "সবুজ", emoji: "💚" }, { bn: "লাল", emoji: "🔴" }] },
+            { questionText: "সূর্যের রং কী?", bn: "হলুদ", emoji: "💛", category: "questions", isQuestion: true, options: [{ bn: "হলুদ", emoji: "💛" }, { bn: "নীল", emoji: "🔵" }] },
+            { questionText: "কোন গাড়ির দুই চাকা?", bn: "সাইকেল", emoji: "🚲", category: "questions", isQuestion: true, options: [{ bn: "সাইকেল", emoji: "🚲" }, { bn: "বাস", emoji: "🚌" }] },
+            { questionText: "কোনটি আকাশে উড়ে?", bn: "বিমান", emoji: "✈️", category: "questions", isQuestion: true, options: [{ bn: "বিমান", emoji: "✈️" }, { bn: "নৌকা", emoji: "🚣" }] },
+            { questionText: "কোথায় অনেক জল থাকে?", bn: "সাগর", emoji: "🌊", category: "questions", isQuestion: true, options: [{ bn: "সাগর", emoji: "🌊" }, { bn: "পাহাড়", emoji: "⛰" }] },
+            { questionText: "কোনটি অনেক উঁচু?", bn: "পাহাড়", emoji: "⛰", category: "questions", isQuestion: true, options: [{ bn: "পাহাড়", emoji: "⛰" }, { bn: "পুকুর", emoji: "" }] },
+            { questionText: "কাগজ কাটতে কী লাগে?", bn: "কাঁচি", emoji: "✂️", category: "questions", isQuestion: true, options: [{ bn: "কাঁচি", emoji: "✂️" }, { bn: "চামচ", emoji: "🥄" }] },
+            { questionText: "স্যুপ খেতে কী লাগে?", bn: "চামচ", emoji: "🥄", category: "questions", isQuestion: true, options: [{ bn: "চামচ", emoji: "🥄" }, { bn: "হাতুড়ি", emoji: "🔨" }] },
+            { questionText: "আমরা কোথায় ঘুমাই?", bn: "বিছানা", emoji: "🛏", category: "questions", isQuestion: true, options: [{ bn: "বিছানা", emoji: "🛏" }, { bn: "চেয়ার", emoji: "" }] },
+            { questionText: "তালা খুলতে কী লাগে?", bn: "চাবি", emoji: "🔑", category: "questions", isQuestion: true, options: [{ bn: "চাবি", emoji: "🔑" }, { bn: "বই", emoji: "📖" }] },
+            
+            // --- Additional Curated Questions ---
+            { questionText: "কোন প্রাণী ঘেউ ঘেউ করে?", bn: "কুকুর", emoji: "🐶", category: "questions", isQuestion: true, options: [{ bn: "কুকুর", emoji: "🐶" }, { bn: "বিড়াল", emoji: "🐱" }] },
+            { questionText: "কোন প্রাণীর লম্বা শুঁড় আছে?", bn: "হাতি", emoji: "🐘", category: "questions", isQuestion: true, options: [{ bn: "হাতি", emoji: "🐘" }, { bn: "ছাগল", emoji: "🐐" }] },
+            { questionText: "কোনটি ধীরে চলে?", bn: "কচ্ছপ", emoji: "🐢", category: "questions", isQuestion: true, options: [{ bn: "কচ্ছপ", emoji: "🐢" }, { bn: "ঘোড়া", emoji: "" }] },
+            { questionText: "কোন ফলের ভেতরে অনেক দানা থাকে?", bn: "ডালিম", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "ডালিম", emoji: "" }, { bn: "কলা", emoji: "🍌" }] },
+            { questionText: "কোন ফুলটি জলে ফোটে?", bn: "পদ্ম", emoji: "🌸", category: "questions", isQuestion: true, options: [{ bn: "পদ্ম", emoji: "🌸" }, { bn: "গোলাপ", emoji: "🌹" }] },
+            { questionText: "কোন গাছ থেকে নারকেল পাওয়া যায়?", bn: "নারকেল গাছ", emoji: "🌴", category: "questions", isQuestion: true, options: [{ bn: "নারকেল গাছ", emoji: "🌴" }, { bn: "বাঁশ", emoji: "🌿" }] },
+            { questionText: "আমরা গন্ধ পাই কী দিয়ে?", bn: "নাক", emoji: "👃", category: "questions", isQuestion: true, options: [{ bn: "নাক", emoji: "👃" }, { bn: "কান", emoji: "👂" }] },
+            { questionText: "আমরা খাই কী দিয়ে?", bn: "মুখ", emoji: "👄", category: "questions", isQuestion: true, options: [{ bn: "মুখ", emoji: "👄" }, { bn: "চোখ", emoji: "👁" }] },
+            { questionText: "আকাশের রং কী?", bn: "নীল", emoji: "🔵", category: "questions", isQuestion: true, options: [{ bn: "নীল", emoji: "🔵" }, { bn: "কালো", emoji: "⚫" }] },
+            { questionText: "কয়লার রং কী?", bn: "কালো", emoji: "⚫", category: "questions", isQuestion: true, options: [{ bn: "সাদা", emoji: "⚪" }, { bn: "কালো", emoji: "⚫" }] },
+            { questionText: "কোন যান রেললাইনে চলে?", bn: "ট্রেন", emoji: "🚆", category: "questions", isQuestion: true, options: [{ bn: "ট্রেন", emoji: "🚆" }, { bn: "বাস", emoji: "🚌" }] },
+            { questionText: "কোন যান জলে চলে?", bn: "জাহাজ", emoji: "🚢", category: "questions", isQuestion: true, options: [{ bn: "জাহাজ", emoji: "🚢" }, { bn: "ট্রাক", emoji: "🚚" }] },
+            { questionText: "কোথায় বালি বেশি থাকে?", bn: "মরুভূমি", emoji: "🏜", category: "questions", isQuestion: true, options: [{ bn: "মরুভূমি", emoji: "🏜" }, { bn: "বন", emoji: "🌲" }] },
+            { questionText: "কোথায় মাছ থাকে?", bn: "নদী", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "নদী", emoji: "" }, { bn: "মরুভূমি", emoji: "🏜" }] },
+            { questionText: "পেরেক ঠুকতে কী লাগে?", bn: "হাতুড়ি", emoji: "🔨", category: "questions", isQuestion: true, options: [{ bn: "হাতুড়ি", emoji: "🔨" }, { bn: "বই", emoji: "📖" }] },
+            { questionText: "সাবান দিয়ে কী করি?", bn: "পরিষ্কার হই", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "পরিষ্কার হই", emoji: "" }, { bn: "লিখি", emoji: "✏️" }] },
+            { questionText: "সময় দেখতে কী লাগে?", bn: "ঘড়ি", emoji: "🕒", category: "questions", isQuestion: true, options: [{ bn: "ঘড়ি", emoji: "🕒" }, { bn: "বালতি", emoji: "" }] },
+            { questionText: "স্কুলে বই রাখি কোথায়?", bn: "ব্যাগ", emoji: "🎒", category: "questions", isQuestion: true, options: [{ bn: "ব্যাগ", emoji: "🎒" }, { bn: "কাপ", emoji: "" }] },
+
+            // --- More Questions ---
+            { questionText: "কোন প্রাণী গাছে চড়ে?", bn: "বানর", emoji: "🐒", category: "questions", isQuestion: true, options: [{ bn: "বানর", emoji: "🐒" }, { bn: "মাছ", emoji: "🐟" }] },
+            { questionText: "কোন প্রাণী দুধ দেয়?", bn: "গরু", emoji: "🐮", category: "questions", isQuestion: true, options: [{ bn: "গরু", emoji: "🐮" }, { bn: "বাঘ", emoji: "🐯" }] },
+            { questionText: "কোন প্রাণীর ডানা আছে?", bn: "পাখি", emoji: "🐦", category: "questions", isQuestion: true, options: [{ bn: "পাখি", emoji: "🐦" }, { bn: "হাতি", emoji: "🐘" }] },
+            { questionText: "কোনটি জলে থাকে?", bn: "অক্টোপাস", emoji: "🐙", category: "questions", isQuestion: true, options: [{ bn: "অক্টোপাস", emoji: "🐙" }, { bn: "বিড়াল", emoji: "🐱" }] },
+            { questionText: "কোন ফলটি লাল?", bn: "আপেল", emoji: "🍎", category: "questions", isQuestion: true, options: [{ bn: "আপেল", emoji: "🍎" }, { bn: "কলা", emoji: "🍌" }] },
+            { questionText: "কোন ফলটি বড় ও কাঁটাযুক্ত?", bn: "কাঁঠাল", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "কাঁঠাল", emoji: "" }, { bn: "আঙুর", emoji: "🍇" }] },
+            { questionText: "কোন ফুলটি হলুদ?", bn: "সূর্যমুখী", emoji: "🌻", category: "questions", isQuestion: true, options: [{ bn: "সূর্যমুখী", emoji: "🌻" }, { bn: "গোলাপ", emoji: "🌹" }] },
+            { questionText: "কোন গাছটি খুব লম্বা হতে পারে?", bn: "তালগাছ", emoji: "🌴", category: "questions", isQuestion: true, options: [{ bn: "তালগাছ", emoji: "🌴" }, { bn: "ঘাস", emoji: "🌿" }] },
+            { questionText: "আমরা হাঁটি কী দিয়ে?", bn: "পা", emoji: "👣", category: "questions", isQuestion: true, options: [{ bn: "পা", emoji: "👣" }, { bn: "কান", emoji: "👂" }] },
+            { questionText: "আমরা ধরি কী দিয়ে?", bn: "হাত", emoji: "✋", category: "questions", isQuestion: true, options: [{ bn: "হাত", emoji: "✋" }, { bn: "নাক", emoji: "👃" }] },
+            { questionText: "পাতার রং কী?", bn: "সবুজ", emoji: "💚", category: "questions", isQuestion: true, options: [{ bn: "সবুজ", emoji: "💚" }, { bn: "বেগুনি", emoji: "💜" }] },
+            { questionText: "দুধের রং কী?", bn: "সাদা", emoji: "⚪", category: "questions", isQuestion: true, options: [{ bn: "সাদা", emoji: "⚪" }, { bn: "কালো", emoji: "⚫" }] },
+            { questionText: "কোন যান অনেক লোক বহন করে?", bn: "বাস", emoji: "🚌", category: "questions", isQuestion: true, options: [{ bn: "বাস", emoji: "🚌" }, { bn: "সাইকেল", emoji: "🚲" }] },
+            { questionText: "কোন যান প্যাডেল চালিয়ে চলে?", bn: "সাইকেল", emoji: "🚲", category: "questions", isQuestion: true, options: [{ bn: "সাইকেল", emoji: "🚲" }, { bn: "ট্রেন", emoji: "🚆" }] },
+            { questionText: "কোথায় গাছ বেশি থাকে?", bn: "বন", emoji: "🌲", category: "questions", isQuestion: true, options: [{ bn: "বন", emoji: "🌲" }, { bn: "সমুদ্র", emoji: "" }] },
+            { questionText: "কোথায় নৌকা চলে?", bn: "নদী", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "নদী", emoji: "" }, { bn: "পাহাড়", emoji: "⛰" }] },
+            { questionText: "কাঠ কাটতে কী লাগে?", bn: "কুঠার", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "কুঠার", emoji: "" }, { bn: "চামচ", emoji: "🥄" }] },
+            { questionText: "লিখতে কী লাগে?", bn: "কলম", emoji: "🖊", category: "questions", isQuestion: true, options: [{ bn: "কলম", emoji: "🖊" }, { bn: "সাবান", emoji: "" }] },
+            { questionText: "রাতে আলো দিতে কী লাগে?", bn: "বাল্ব", emoji: "💡", category: "questions", isQuestion: true, options: [{ bn: "বাল্ব", emoji: "💡" }, { bn: "বালতি", emoji: "" }] },
+            
+            // --- Third Set of Curated Questions ---
+            { questionText: "কোন প্রাণী ঘাস খায়?", bn: "ছাগল", emoji: "🐐", category: "questions", isQuestion: true, options: [{ bn: "ছাগল", emoji: "🐐" }, { bn: "বাঘ", emoji: "🐯" }] },
+            { questionText: "কোন প্রাণী মধু বানায়?", bn: "মৌমাছি", emoji: "🐝", category: "questions", isQuestion: true, options: [{ bn: "মৌমাছি", emoji: "🐝" }, { bn: "মাছ", emoji: "🐟" }] },
+            { questionText: "কোন প্রাণীর লেজ আছে?", bn: "বিড়াল", emoji: "🐱", category: "questions", isQuestion: true, options: [{ bn: "বিড়াল", emoji: "🐱" }, { bn: "মানুষ", emoji: "🧑" }] },
+            { questionText: "কোনটি হিস হিস করে?", bn: "সাপ", emoji: "🐍", category: "questions", isQuestion: true, options: [{ bn: "সাপ", emoji: "🐍" }, { bn: "খরগোশ", emoji: "🐰" }] },
+            { questionText: "কোন ফলটি রসালো?", bn: "কমলা", emoji: "🍊", category: "questions", isQuestion: true, options: [{ bn: "কমলা", emoji: "🍊" }, { bn: "নারকেল", emoji: "🥥" }] },
+            { questionText: "কোন ফলটি ছোট ছোট দানায় ভরা?", bn: "আঙুর", emoji: "🍇", category: "questions", isQuestion: true, options: [{ bn: "আঙুর", emoji: "🍇" }, { bn: "আম", emoji: "" }] },
+            { questionText: "কোন ফুলে সুগন্ধ থাকে?", bn: "জুঁই", emoji: "🌸", category: "questions", isQuestion: true, options: [{ bn: "জুঁই", emoji: "🌸" }, { bn: "ঘাস", emoji: "🌿" }] },
+            { questionText: "কোন গাছের পাতা খুব ছোট?", bn: "বাঁশ", emoji: "🌿", category: "questions", isQuestion: true, options: [{ bn: "বাঁশ", emoji: "🌿" }, { bn: "কলাগাছ", emoji: "🌴" }] },
+            { questionText: "আমরা দাঁত মাজি কী দিয়ে?", bn: "টুথব্রাশ", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "টুথব্রাশ", emoji: "" }, { bn: "চামচ", emoji: "🥄" }] },
+            { questionText: "আমরা কামড়াই কী দিয়ে?", bn: "দাঁত", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "দাঁত", emoji: "" }, { bn: "চোখ", emoji: "👁" }] },
+            { questionText: "রক্তের রং কী?", bn: "লাল", emoji: "🔴", category: "questions", isQuestion: true, options: [{ bn: "লাল", emoji: "🔴" }, { bn: "নীল", emoji: "🔵" }] },
+            { questionText: "কলার রং কী?", bn: "হলুদ", emoji: "💛", category: "questions", isQuestion: true, options: [{ bn: "হলুদ", emoji: "💛" }, { bn: "কালো", emoji: "⚫" }] },
+            { questionText: "কোন যান মাল বহন করে?", bn: "ট্রাক", emoji: "🚚", category: "questions", isQuestion: true, options: [{ bn: "ট্রাক", emoji: "🚚" }, { bn: "সাইকেল", emoji: "🚲" }] },
+            { questionText: "কোন যান হাওয়ায় উড়ে?", bn: "হেলিকপ্টার", emoji: "🚁", category: "questions", isQuestion: true, options: [{ bn: "হেলিকপ্টার", emoji: "🚁" }, { bn: "বাস", emoji: "🚌" }] },
+            { questionText: "কোথায় ঢেউ ওঠে?", bn: "সাগর", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "সাগর", emoji: "" }, { bn: "বন", emoji: "🌲" }] },
+            { questionText: "স্ক্রু লাগাতে কী লাগে?", bn: "স্ক্রু ড্রাইভার", emoji: "🔧", category: "questions", isQuestion: true, options: [{ bn: "স্ক্রু ড্রাইভার", emoji: "🔧" }, { bn: "কাপ", emoji: "" }] },
+            { questionText: "জিনিস বাঁধতে কী লাগে?", bn: "দড়ি", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "দড়ি", emoji: "" }, { bn: "বই", emoji: "📖" }] },
+            { questionText: "জল খেতে কী লাগে?", bn: "গ্লাস", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "গ্লাস", emoji: "" }, { bn: "তালা", emoji: "🔒" }] },
+            { questionText: "ফোনে কী করি?", bn: "কথা বলি", emoji: "📱", category: "questions", isQuestion: true, options: [{ bn: "কথা বলি", emoji: "📱" }, { bn: "ঘুমাই", emoji: "🛏" }] },
+            { questionText: "কোন প্রাণী গর্জন করে?", bn: "সিংহ", emoji: "🦁", category: "questions", isQuestion: true, options: [{ bn: "সিংহ", emoji: "🦁" }, { bn: "ভেড়া", emoji: "🐑" }] },
+            { questionText: "কোন প্রাণী ধীরে উড়ে?", bn: "প্রজাপতি", emoji: "🦋", category: "questions", isQuestion: true, options: [{ bn: "প্রজাপতি", emoji: "🦋" }, { bn: "কুমির", emoji: "🐊" }] },
+            { questionText: "কোন প্রাণী জঙ্গলে থাকে?", bn: "ভালুক", emoji: "🐻", category: "questions", isQuestion: true, options: [{ bn: "ভালুক", emoji: "🐻" }, { bn: "হাঁস", emoji: "🐤" }] },
+            { questionText: "কোনটির শক্ত খোলক আছে?", bn: "শামুক", emoji: "🐌", category: "questions", isQuestion: true, options: [{ bn: "শামুক", emoji: "🐌" }, { bn: "কুকুর", emoji: "🐶" }] },
+            { questionText: "কোন ফলটি মিষ্টি?", bn: "আম", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "আম", emoji: "" }, { bn: "লেবু", emoji: "🍋" }] },
+            { questionText: "কোন ফলটি টক?", bn: "লেবু", emoji: "🍋", category: "questions", isQuestion: true, options: [{ bn: "লেবু", emoji: "🍋" }, { bn: "কলা", emoji: "🍌" }] },
+            { questionText: "কোন গাছ ঔষধি?", bn: "নিম", emoji: "🌳", category: "questions", isQuestion: true, options: [{ bn: "নিম", emoji: "🌳" }, { bn: "পাথর", emoji: "⛰" }] },
+            { questionText: "আমরা চাটি কী দিয়ে?", bn: "জিহ্বা", emoji: "👅", category: "questions", isQuestion: true, options: [{ bn: "জিহ্বা", emoji: "👅" }, { bn: "কান", emoji: "👂" }] },
+            { questionText: "কমলা লেবুর রং কী?", bn: "কমলা", emoji: "🍊", category: "questions", isQuestion: true, options: [{ bn: "কমলা", emoji: "🍊" }, { bn: "নীল", emoji: "🔵" }] },
+            { questionText: "কোন যান ছোট?", bn: "অটোরিকশা", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "অটোরিকশা", emoji: "" }, { bn: "ট্রেন", emoji: "🚆" }] },
+            { questionText: "কোন গাড়িতে অনেক বগি থাকে?", bn: "ট্রেন", emoji: "🚆", category: "questions", isQuestion: true, options: [{ bn: "ট্রেন", emoji: "🚆" }, { bn: "গাড়ি", emoji: "🚗" }] },
+            { questionText: "কোথায় জল উপর থেকে নিচে নামে?", bn: "জলপ্রপাত", emoji: "🌊", category: "questions", isQuestion: true, options: [{ bn: "জলপ্রপাত", emoji: "🌊" }, { bn: "পাহাড়", emoji: "⛰" }] },
+            { questionText: "কোথায় মাছ ধরা হয়?", bn: "পুকুর", emoji: "", category: "questions", isQuestion: true, options: [{ bn: "পুকুর", emoji: "" }, { bn: "রাস্তা", emoji: "🚗" }] },
+            { questionText: "দরজা বন্ধ রাখতে কী লাগে?", bn: "তালা", emoji: "🔒", category: "questions", isQuestion: true, options: [{ bn: "তালা", emoji: "🔒" }, { bn: "পেন্সিল", emoji: "" }] },
+            { questionText: "টিভি তে কী দেখি?", bn: "ছবি", emoji: "📺", category: "questions", isQuestion: true, options: [{ bn: "ছবি", emoji: "📺" }, { bn: "জল", emoji: "" }] },
+            { questionText: "রাতে ঘুমানোর আগে কী বন্ধ করি?", bn: "ল্যাম্প", emoji: "💡", category: "questions", isQuestion: true, options: [{ bn: "ল্যাম্প", emoji: "💡" }, { bn: "বই", emoji: "📖" }] }
+        ];
+
+        let currentFilter = 'kids'; // Changed default mode to Kids Mode
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let correctAnswer = "";
+        let currentEnglishWord = "";
+        let audioPlayedForCurrentQuestion = false;
+
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const questionAudioBtn = document.getElementById('question-audio');
+        const topPlayBtn = document.getElementById('top-play-btn');
+
+        // TTS System
+        const synth = window.speechSynthesis;
+        let bengaliVoice = null;
+        let englishVoice = null;
+        let ttsAvailable = false;
+
+        function populateVoiceList() {
+            if (!synth) { disableAudioUI(); return; }
+            const voices = synth.getVoices();
+            if (voices.length > 0) {
+                ttsAvailable = true;
+                bengaliVoice = voices.find(voice => voice.lang.toLowerCase().includes('bn'));
+                englishVoice = voices.find(voice => voice.lang.toLowerCase().includes('en'));
+            }
+        }
+
+        if (synth) {
+            populateVoiceList();
+            if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = populateVoiceList;
+        } else {
+            disableAudioUI();
+        }
+
+        function disableAudioUI() {
+            ttsAvailable = false;
+            const style = document.createElement('style');
+            style.innerHTML = '.audio-btn, .top-play-btn { display: none !important; }';
+            document.head.appendChild(style);
+            unlockOptions(); // Fallback: Unlock options automatically if TTS isn't available
+        }
+
+        function speak(text, isBengali, onEndCallback = null) {
+            if (!ttsAvailable || !synth) {
+                if (onEndCallback) setTimeout(onEndCallback, 1500);
+                return;
+            }
+            if (synth.speaking) synth.cancel();
+            if (text !== '') {
+                const utterThis = new SpeechSynthesisUtterance(text);
+                if (isBengali) {
+                    if (bengaliVoice) utterThis.voice = bengaliVoice;
+                    utterThis.lang = 'bn-IN';
+                } else {
+                    if (englishVoice) utterThis.voice = englishVoice;
+                    utterThis.lang = 'en-US';
+                }
+                utterThis.rate = 0.85;
+                if (onEndCallback) {
+                    utterThis.onend = onEndCallback;
+                    utterThis.onerror = onEndCallback;
+                }
+                synth.speak(utterThis);
+            } else if (onEndCallback) {
+                onEndCallback();
+            }
+        }
+
+        // --- List View Build Logic ---
+        const listToggleBtn = document.getElementById('list-toggle-btn');
+        const listView = document.getElementById('list-view');
+        const mainEl = document.querySelector('main');
+        const listTbody = document.getElementById('list-tbody');
+        const listTableWrapper = document.getElementById('list-table-wrapper');
+        const listQuestionsContainer = document.getElementById('list-questions-container');
+        let listVisible = false;
+
+        const categoryOrder = ['animals', 'trees', 'human', 'others'];
+        const categoryLabels = { animals: 'Animals', trees: 'Trees', human: 'Human', others: 'Others' };
+
+        function buildListTable(filter) {
+            // Clean both containers first
+            listTbody.innerHTML = '';
+            listQuestionsContainer.innerHTML = '';
+
+            if (filter === 'questions') {
+                // Hide table, Show card list
+                listTableWrapper.style.display = 'none';
+                listQuestionsContainer.style.display = 'flex';
+
+                const questionsData = vocabData.filter(i => i.isQuestion);
+                questionsData.forEach(q => {
+                    const correctOpt = q.options.find(o => o.bn === q.bn);
+                    const wrongOpt = q.options.find(o => o.bn !== q.bn);
+
+                    const qItem = document.createElement('div');
+                    qItem.className = 'list-question-item';
+                    qItem.innerHTML = `
+                        <div class="list-question-title">❓ ${q.questionText}</div>
+                        <div class="list-question-options">
+                            <span class="list-opt correct">✔️ ${correctOpt.bn} ${correctOpt.emoji}</span>
+                            <span class="list-opt incorrect">❌ ${wrongOpt.bn} ${wrongOpt.emoji}</span>
+                        </div>
+                    `;
+                    listQuestionsContainer.appendChild(qItem);
+                });
+            } else {
+                // Show table, Hide card list
+                listTableWrapper.style.display = 'block';
+                listQuestionsContainer.style.display = 'none';
+
+                const data = (filter === 'all' || filter === 'kids'
+                    ? vocabData 
+                    : vocabData.filter(i => i.category === filter)
+                ).filter(i => !i.isQuestion);
+
+                if (filter === 'all' || filter === 'kids') {
+                    categoryOrder.forEach(cat => {
+                        const items = data.filter(i => i.category === cat);
+                        if (!items.length) return;
+                        const headRow = document.createElement('tr');
+                        headRow.innerHTML = `<td colspan="3" class="list-category-heading">${categoryLabels[cat]}</td>`;
+                        listTbody.appendChild(headRow);
+                        items.forEach(item => appendRow(item));
+                    });
+                } else {
+                    data.forEach(item => appendRow(item));
+                }
+            }
+        }
+
+        function appendRow(item) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.en}</td>
+                <td class="bn-cell">${item.bn}</td>
+                <td class="emoji-cell">${item.emoji}</td>
+            `;
+            listTbody.appendChild(tr);
+        }
+
+        listToggleBtn.addEventListener('click', () => {
+            listVisible = !listVisible;
+            if (listVisible) {
+                buildListTable(currentFilter);
+                listView.classList.add('visible');
+                mainEl.style.display = 'none';
+                listToggleBtn.classList.add('active');
+                listToggleBtn.textContent = '✕ Close';
+            } else {
+                listView.classList.remove('visible');
+                mainEl.style.display = '';
+                listToggleBtn.classList.remove('active');
+                listToggleBtn.textContent = '📋 List';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupFilters();
+            loadCategory('kids'); // Load Kids Mode as default
+            
+            questionAudioBtn.addEventListener('click', () => {
+                const currentItem = currentQuestions[currentQuestionIndex];
+                if (currentItem && currentItem.isQuestion) {
+                    speak(currentItem.questionText, true);
+                } else if (currentItem) {
+                    speak(`${currentEnglishWord} মানে কী?`, true);
+                }
+                unlockOptions(); // Unlock logic for Kids Mode
+            });
+        });
+
+        function setupFilters() {
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    currentFilter = button.getAttribute('data-filter');
+                    if (listVisible) {
+                        buildListTable(currentFilter);
+                    } else {
+                        loadCategory(currentFilter);
+                    }
+                });
+            });
+        }
+        
+        function unlockOptions() {
+            if (currentFilter !== 'kids') return;
+            audioPlayedForCurrentQuestion = true;
+            const lockedBtns = optionsContainer.querySelectorAll('.kids-locked');
+            lockedBtns.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('kids-locked');
+            });
+        }
+
+        function loadCategory(filter) {
+            if (filter === 'all' || filter === 'kids') {
+                currentQuestions = [...vocabData];
+            } else if (filter === 'questions') {
+                currentQuestions = vocabData.filter(item => item.isQuestion);
+            } else {
+                currentQuestions = vocabData.filter(item => item.category === filter && !item.isQuestion);
+            }
+            shuffleArray(currentQuestions);
+            currentQuestionIndex = 0;
+
+            if (currentQuestions.length > 0) {
+                renderQuestion();
+            } else {
+                questionText.innerHTML = "No words available.";
+                optionsContainer.innerHTML = "";
+                if (ttsAvailable) {
+                    questionAudioBtn.style.display = 'none';
+                    topPlayBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function renderQuestion() {
+            audioPlayedForCurrentQuestion = false; // Reset lock for new question
+            
+            if (ttsAvailable) {
+                questionAudioBtn.style.display = 'flex';
+                topPlayBtn.style.display = 'inline-flex';
+            }
+
+            const currentItem = currentQuestions[currentQuestionIndex];
+            if (!currentItem) return;
+            
+            let options = [];
+            if (currentItem.isQuestion) {
+                correctAnswer = currentItem.bn;
+                currentEnglishWord = "";
+                questionText.innerHTML = currentItem.questionText;
+                
+                // For conceptual questions, load predefined correct & distractor options
+                options = [...currentItem.options];
+            } else {
+                correctAnswer = currentItem.bn;
+                currentEnglishWord = currentItem.en;
+                questionText.innerHTML = `<span>${currentItem.en}</span> মানে কী?`;
+                
+                // Classic vocabulary distractor logic
+                const wrongItem = getDistractorItem(currentItem);
+                options = [
+                    { bn: currentItem.bn, emoji: currentItem.emoji },
+                    { bn: wrongItem.bn, emoji: wrongItem.emoji }
+                ];
+            }
+            
+            shuffleArray(options);
+            
+            topPlayBtn.onclick = () => {
+                let fullSentence = "";
+                if (currentItem.isQuestion) {
+                    fullSentence = `${currentItem.questionText}, বলো তো, ${options[0].bn}, নাকি, ${options[1].bn}?`;
+                } else {
+                    fullSentence = `${currentEnglishWord}, মানে কী? ${options[0].bn}, নাকি, ${options[1].bn}?`;
+                }
+                speak(fullSentence, true);
+                unlockOptions(); // Unlock options once audio play is triggered
+            };
+
+            optionsContainer.innerHTML = "";
+            options.forEach(optItem => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'option-wrapper';
+                wrapper.dataset.value = optItem.bn;
+
+                const textBtn = document.createElement('button');
+                textBtn.className = 'option-btn';
+                
+                // Lock buttons strictly if Kids Mode is on and TTS is available 
+                if (currentFilter === 'kids' && !audioPlayedForCurrentQuestion && ttsAvailable) {
+                    textBtn.disabled = true;
+                    textBtn.classList.add('kids-locked');
+                }
+                
+                textBtn.innerHTML = `
+                    <div class="option-emoji">${optItem.emoji}</div>
+                    <div class="option-text">${optItem.bn}</div>
+                `;
+                textBtn.onclick = () => handleAnswer(wrapper, optItem.bn === correctAnswer);
+
+                const audioBtn = document.createElement('button');
+                audioBtn.className = 'audio-btn option-audio-btn';
+                audioBtn.setAttribute('aria-label', `Play audio for ${optItem.bn}`);
+                audioBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                `;
+                audioBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    speak(optItem.bn, true);
+                };
+
+                wrapper.appendChild(audioBtn);
+                wrapper.appendChild(textBtn);
+                optionsContainer.appendChild(wrapper);
+            });
+        }
+
+        function getDistractorItem(correctItem) {
+            const sameCategoryItems = vocabData.filter(item => 
+                item.category === correctItem.category && item.en !== correctItem.en && !item.isQuestion
+            );
+            if (sameCategoryItems.length > 0) {
+                return sameCategoryItems[Math.floor(Math.random() * sameCategoryItems.length)];
+            }
+            return vocabData.find(item => item.en !== correctItem.en && !item.isQuestion);
+        }
+
+        function handleAnswer(clickedWrapper, isCorrect) {
+            const allWrappers = optionsContainer.querySelectorAll('.option-wrapper');
+            allWrappers.forEach(wrapper => {
+                wrapper.querySelector('.option-btn').disabled = true;
+            });
+
+            const currentItem = currentQuestions[currentQuestionIndex];
+
+            if (isCorrect) {
+                clickedWrapper.classList.add('correct');
+                fireConfetti();
+                
+                let feedbackText = "";
+                if (currentItem.isQuestion) {
+                    feedbackText = `দারুণ! ${correctAnswer} একদম সঠিক উত্তর।`;
+                } else {
+                    feedbackText = `${currentEnglishWord} মানে ${correctAnswer}`;
+                }
+
+                speak(feedbackText, true, () => {
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex >= currentQuestions.length) {
+                        shuffleArray(currentQuestions);
+                        currentQuestionIndex = 0;
+                    }
+                    renderQuestion();
+                });
+            } else {
+                clickedWrapper.classList.add('incorrect');
+                allWrappers.forEach(wrapper => {
+                    if (wrapper.dataset.value === correctAnswer) {
+                        wrapper.classList.add('correct');
+                    }
+                });
+                setTimeout(renderQuestion, 1500);
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- Confetti ---
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let confettiActive = false;
+        let animationId;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function fireConfetti() {
+            const colors = ['#FFEB3B', '#81C784', '#F48FB1', '#64B5F6', '#FFB74D'];
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    dx: Math.random() * 4 - 2,
+                    dy: Math.random() * 5 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5
+                });
+            }
+            if (!confettiActive) {
+                confettiActive = true;
+                renderConfetti();
+            }
+        }
+
+        function renderConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let activeParticles = 0;
+            particles.forEach(p => {
+                p.y += p.dy;
+                p.x += p.dx;
+                p.tilt += 0.1;
+                if (p.y < canvas.height) {
+                    activeParticles++;
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+                    ctx.stroke();
+                }
+            });
+            if (activeParticles > 0) {
+                animationId = requestAnimationFrame(renderConfetti);
+            } else {
+                confettiActive = false;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+    </script>
+</body>
+</html>

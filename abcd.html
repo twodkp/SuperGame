@@ -1,0 +1,2207 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Text-to-Speech</title>
+    <style>
+        /* Universal box-sizing for consistent layout */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 0; /* Remove body padding for full screen shorts */
+            margin: 0;
+            overflow: hidden; /* Prevent body scroll */
+            position: relative;
+        }
+        .app-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100vw; /* Take full viewport width */
+            height: 100vh; /* Take full viewport height */
+            max-width: 600px; /* Max width for a phone-like experience */
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 0;
+            overflow: hidden; /* Hide content overflow within the wrapper */
+        }
+
+        .header {
+            position: fixed; /* Make header fixed */
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%); /* Center the fixed header */
+            width: 100%;
+            max-width: 600px; /* Match app-wrapper max-width */
+            height: 60px; /* Explicitly set header height */
+            display: block; /* Changed to block to allow absolute positioning of children */
+            background-color: #ede9fe; /* Purple-100 */
+            border-bottom: 1px solid #ddd6fe; /* Purple-200 */
+            z-index: 9999; /* Ensure header is always on top */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optional: Add a subtle shadow to fixed header */
+        }
+        .susovan-pal-title-container {
+            position: absolute; /* Position absolutely within the header */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Center both horizontally and vertically */
+            display: flex; /* Keep flex for its internal content (h2 and play-icon) */
+            justify-content: center; /* Center its content */
+            align-items: center;
+            gap: 0.5rem;
+            color: #7c3aed; /* Purple-600 */
+            font-size: 1.2rem;
+            font-weight: 700;
+            width: fit-content; /* Adjust width to content */
+        }
+        .susovan-pal-title-container h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+        .susovan-pal-title-container .play-icon {
+            margin-top: 0;
+            width: 28px;
+            height: 28px;
+            background-color: #a78bfa; /* Purple-400 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .susovan-pal-title-container .play-icon:hover {
+            background-color: #8b5cf6;
+        }
+        .susovan-pal-title-container .play-icon svg {
+            width: 14px;
+            height: 14px;
+            fill: white;
+        }
+
+        .score-display {
+            position: absolute;
+            left: 1rem; /* Position on the left */
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #7c3aed; /* Purple-600 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            background-color: #e0e7ff; /* Light blue/purple background */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10000; /* Ensure it's above other elements if they overlap */
+        }
+
+        .hamburger-menu-button {
+            position: absolute;
+            top: 50%; /* Center vertically */
+            right: 1rem;
+            transform: translateY(-50%); /* Center vertically */
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000; /* Increased z-index to be above the fixed header */
+        }
+        .hamburger-menu-button:hover {
+            background-color: #e5e7eb;
+        }
+        .hamburger-menu-button svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .shorts-container {
+            flex-grow: 1;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory; /* Re-enabled for smooth scrolling */
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+            z-index: 10;
+            margin-top: 60px; /* Add margin to account for fixed header height */
+            padding-bottom: 80px; /* Space for navigation buttons at the bottom */
+            height: calc(100vh - 60px); /* Fill remaining viewport height */
+        }
+
+        .short-card {
+            width: 100%;
+            height: calc(100% - 1px); /* Take 100% of its parent (shorts-container) for snapping */
+            flex-shrink: 0;
+            scroll-snap-align: start; /* Snap to the top of the container */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #ffffff; /* White background for the box */
+            border-radius: 0.75rem; /* Rounded corners for the box */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+            padding: 1.5rem; /* Increased padding inside the box */
+            margin-bottom: 0; /* No margin between snapped cards */
+            box-sizing: border-box;
+            position: relative;
+        }
+        /* No need for :last-child margin-bottom: 0 with scroll-snap */
+
+        .short-card .emoji {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            line-height: 1;
+        }
+        .short-card .nickname-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            transition: font-size 0.2s ease-in-out; /* Smooth transition for enlargement */
+        }
+        .short-card .nickname-display.enlarged-nickname {
+            font-size: 6rem; /* Larger font size when enlarged (2x of 3rem) */
+        }
+        .short-card .rhyme-display {
+            font-size: 1.5rem;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .play-icon {
+            background-color: #a78bfa; /* Purple-400 */
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .play-icon:hover {
+            background-color: #8b5cf6; /* Purple-500 */
+        }
+        .play-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        /* New button group for play and rhyme buttons */
+        .button-group {
+            display: flex;
+            gap: 1rem; /* Space between play and rhyme buttons */
+            margin-top: 1rem; /* Space above the button group */
+            align-items: center; /* Align items vertically in the center */
+        }
+
+        /* Forgotten Button Container */
+        .forgotten-button-container {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px; /* Match app-wrapper max-width */
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: #ffffff;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 9998; /* Below header, above content */
+        }
+        .nav-button { /* Reusing nav-button for forgotten button */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: none;
+            background-color: #7c3aed; /* Primary color */
+            color: white;
+        }
+        .nav-button:hover {
+            background-color: #6d28d9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .nav-button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .nav-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        /* Glow effect for forgotten button */
+        @keyframes glow-red {
+            0% { box-shadow: 0 0 5px 2px rgba(255, 0, 0, 0.6); }
+            50% { box-shadow: 0 0 10px 5px rgba(255, 0, 0, 0.9); }
+            100% { box-shadow: 0 0 5px 2px rgba(255, 0, 0, 0.6); }
+        }
+        .nav-button.glow-red {
+            animation: glow-red 1.5s infinite alternate;
+        }
+
+        .forgotten-emoji {
+            margin-left: 0.5rem; /* Space between text and emoji */
+            font-size: 1.2em; /* Make emoji slightly larger than text */
+            line-height: 1; /* Ensure vertical alignment */
+        }
+
+        /* Expandable Menu Container */
+        #hamburgerMenuContainer {
+            background-color: #ffffff;
+            padding: 0 1.5rem; /* Padding for content, but 0 top/bottom initially */
+            border-radius: 0 0 1rem 1rem; /* Rounded corners only at bottom when expanded */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            position: fixed; /* Changed to fixed to be relative to viewport */
+            top: 60px; /* Directly below the fixed header (60px) */
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
+            width: 100%;
+            max-width: 600px; /* Match app-wrapper max-width */
+            max-height: 0; /* Start collapsed */
+            overflow: hidden; /* Hide content when collapsed */
+            opacity: 0; /* Start transparent */
+            z-index: 10001; /* Above hamburger button and header */
+            visibility: hidden; /* Hide completely when collapsed */
+            pointer-events: none; /* Disable interactions when hidden */
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out, visibility 0s 0.3s; /* Delay visibility change when hiding */
+        }
+        #hamburgerMenuContainer.show {
+            max-height: 9999px; /* Sufficiently large to show all content */
+            opacity: 1;
+            padding-top: 1.5rem; /* Add padding when expanded */
+            padding-bottom: 1.5rem; /* Add padding when expanded */
+            visibility: visible; /* Show when expanded */
+            pointer-events: auto; /* Enable interactions when shown */
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, padding-top 0.3s ease-in-out, padding-bottom 0.3s ease-in-out, visibility 0s 0s; /* No delay when showing */
+        }
+
+        /* Expandable Menu Sections */
+        .menu-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin-bottom: 0.5rem; /* Space between sections */
+        }
+        .menu-section:last-child {
+            margin-bottom: 0;
+        }
+        .menu-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: #f9fafb;
+            cursor: pointer;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .menu-section-header:hover {
+            background-color: #f3f4f6;
+        }
+        .menu-section-header svg {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.2s ease-in-out;
+        }
+        .menu-section-header.expanded svg {
+            transform: rotate(90deg); /* Rotate icon when expanded */
+        }
+        .menu-section-content {
+            padding: 0 1rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+        .menu-section-content.expanded {
+            max-height: 300px; /* Adjust as needed for content height */
+            padding: 1rem;
+            overflow-y: auto; /* Allow vertical scrolling */
+        }
+
+        /* Jump To List */
+        #jumpToOptions {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px; /* Limit height for scrollability */
+            overflow-y: auto;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 0.5rem;
+        }
+        #jumpToOptions li {
+            padding: 0.5rem 0;
+            cursor: pointer;
+            color: #4b5563;
+            transition: background-color 0.2s;
+            border-bottom: 1px dashed #f3f4f6;
+        }
+        #jumpToOptions li:last-child {
+            border-bottom: none;
+        }
+        #jumpToOptions li:hover {
+            background-color: #f9fafb;
+            color: #7c3aed;
+        }
+        
+        /* Reward Links List */
+        #rewardLinksList li {
+            padding: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        #rewardLinksList li:last-child {
+            border-bottom: none;
+        }
+        #rewardLinksList li span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 1rem;
+            color: #4b5563;
+            font-size: 0.9rem;
+        }
+        #rewardLinksList li button {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+        }
+        #rewardLinksList li button:hover {
+            color: #dc2626;
+            background-color: #fee2e2;
+            border-radius: 0.25rem;
+        }
+
+        /* Custom Text Input Area */
+        #customTextInputSection, #manageRewardsSection {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            /* No padding here, it's handled by .menu-section-content.expanded */
+        }
+        #customTextInputSection label, #customTextInputSection input, #customTextInputSection textarea,
+        #manageRewardsSection label, #manageRewardsSection input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            outline: none;
+            box-shadow: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: #1f2937;
+            resize: none; /* Prevent user resizing */
+        }
+        #customTextInputSection textarea {
+            min-height: 80px; /* Give it a reasonable default height */
+        }
+        #customTextInputSection input:focus, #customTextInputSection textarea:focus,
+        #manageRewardsSection input:focus {
+            border-color: #7c3aed; /* Purple-600 */
+            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.5); /* Purple-600 with opacity */
+        }
+        #customTextInputSection .flex-row {
+            display: flex;
+            flex-wrap: nowrap; /* Prevent wrapping for buttons */
+            justify-content: center;
+            gap: 0.5rem; /* Keep the existing gap */
+        }
+        /* Smaller buttons for custom text menu */
+        #customTextInputSection .button.menu-button {
+            flex: 0 0 calc(50% - 0.25rem); /* Two items, with a gap of 0.5rem (0.25rem on each side) */
+            min-width: unset; /* Remove min-width constraint */
+            padding: 0.5rem 1rem; /* Smaller padding */
+            font-size: 0.9rem; /* Smaller font size */
+            height: auto; /* Adjust height based on content */
+        }
+        #customTextInputSection .button.menu-button svg {
+            width: 18px; /* Smaller icon */
+            height: 18px; /* Smaller icon */
+            margin-right: 0.25rem; /* Reduced margin */
+        }
+
+        /* Base Button Styles */
+        .button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: none; /* Ensure no default border */
+        }
+
+        .button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        /* Primary Button */
+        .primary-button {
+            background-color: #7c3aed; /* Purple-600 */
+            color: white;
+        }
+        .primary-button:hover {
+            background-color: #6d28d9; /* Purple-700 */
+        }
+
+        /* Secondary Button */
+        .secondary-button {
+            background-color: #e5e7eb; /* Gray-200 */
+            color: #374151; /* Gray-700 */
+            border: 1px solid #d1d5db; /* Gray-300 */
+        }
+        .secondary-button:hover {
+            background-color: #d1d5db; /* Gray-300 */
+        }
+
+        /* Confirm Delete Button (specific style) */
+        .confirm-delete-button {
+            background-color: #ef4444; /* Red-500 */
+            color: white;
+        }
+        .confirm-delete-button:hover {
+            background-color: #dc2626; /* Red-600 */
+        }
+        .confirm-delete-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #ef4444; /* Keep red but dimmed */
+        }
+
+        /* Modals and Messages (Existing styles, kept for reference) */
+        .message-box {
+            position: fixed;
+            top: 80px; /* Adjusted position */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* Highest z-index for messages */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .message-box.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10020; /* UPDATED: Higher z-index to appear above hamburger menu (10001) */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-content h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .modal-content p {
+            margin-bottom: 1rem;
+        }
+        .modal-content .flex {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        /* UPDATED: Specific style for the delete confirmation input code */
+        #deleteCodeInput {
+            width: 100%;
+            box-sizing: border-box; /* Important for padding */
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1.2rem; /* Make it a bit distinct/larger for code entry */
+            text-align: center; /* Center the code */
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #deleteCodeInput:focus {
+            border-color: #ef4444; /* Red focus to signify danger/deletion */
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+        }
+
+        #basketballsDisplay {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            word-break: break-all;
+        }
+
+        .dot-menu-container {
+            position: relative; /* Changed to relative */
+            z-index: 10003; /* Increased z-index to be above everything */
+        }
+        .dot-menu-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            z-index: 10003; /* Ensure button itself is on top */
+        }
+        .dot-menu-button:hover {
+            background-color: #e5e7eb;
+        }
+        .dot-menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            min-width: 120px;
+            visibility: hidden; /* Hidden by default, toggled by JS */
+            pointer-events: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10003; /* Ensure dropdown is on top */
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out, visibility 0s 0.3s;
+        }
+        .dot-menu-dropdown.show {
+            visibility: visible;
+            pointer-events: auto;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out, visibility 0s 0s;
+        }
+        .dot-menu-dropdown button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #374151;
+            transition: background-color 0.2s;
+            width: 100%;
+            border-radius: 0;
+        }
+        .dot-menu-dropdown button:hover {
+            background-color: #f3f4f6;
+        }
+        .dot-menu-dropdown button.delete-option {
+            color: #ef4444;
+        }
+        .dot-menu-dropdown button.delete-option:hover {
+            background-color: #fee2e2;
+        }
+
+        /* Glow effect for dot menu button */
+        @keyframes pulse-glow {
+            from {
+                box-shadow: 0 0 8px 4px rgba(124, 58, 237, 0.6), 0 0 12px 6px rgba(124, 58, 237, 0.4);
+            }
+            to {
+                box-shadow: 0 0 12px 6px rgba(124, 58, 237, 0.9), 0 0 18px 10px rgba(124, 58, 237, 0.8);
+            }
+        }
+        .dot-menu-button.glowing {
+            box-shadow: 0 0 10px 5px rgba(124, 58, 237, 0.8), 0 0 15px 8px rgba(124, 58, 237, 0.6);
+            animation: pulse-glow 1.5s infinite alternate;
+        }
+
+        /* Glow effect for individual emoji */
+        @keyframes pulse-emoji-glow {
+            from {
+                text-shadow: 0 0 5px rgba(255, 215, 0, 0.6), 0 0 10px rgba(255, 215, 0, 0.4);
+            }
+            to {
+                text-shadow: 0 0 10px rgba(255, 215, 0, 0.9), 0 0 15px rgba(255, 215, 0, 0.8);
+            }
+        }
+        .emoji.glowing-emoji {
+            animation: pulse-emoji-glow 1.5s infinite alternate;
+        }
+
+        .easter-egg-emoji {
+            position: fixed;
+            font-size: 5rem; /* Changed to 5rem to match card emoji size */
+            pointer-events: none;
+            animation-fill-mode: forwards;
+            white-space: nowrap;
+            will-change: left, top;
+            z-index: 99999; /* Very high z-index to ensure visibility */
+        }
+        @keyframes vertical-emoji-rain {
+            0% { transform: translateY(-100px) translateX(var(--x-offset)); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(calc(100vh + 100px)) translateX(var(--x-offset)); opacity: 0; }
+        }
+        .vertical-rain-emoji {
+            animation: vertical-emoji-rain 7.5s linear forwards;
+        }
+        @keyframes emoji-dance-path {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(100px, 0) rotate(90deg); }
+            50% { transform: translate(100px, 100px) rotate(180deg); }
+            75% { transform: translate(0, 100px) rotate(270deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+        .dance-emoji {
+            animation: emoji-dance-path 5s linear infinite; /* Adjusted to 5s */
+            opacity: 1;
+        }
+        .crawling-clone {
+            transition: left 1s ease-in-out, top 1s ease-in-out; /* Ensured 1s transition for visible crawl */
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div class="header">
+            <div class="score-display"><span id="scoreValue">0</span></div>
+            <div class="susovan-pal-title-container">
+                <h2>Susovan Pal</h2>
+                <div id="susovonPalPlayButton" class="play-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+            <button id="toggleHamburgerMenuButton" class="hamburger-menu-button">
+                <!-- Hamburger menu icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu">
+                    <line x1="4" x2="20" y1="12" y2="12"/>
+                    <line x1="4" x2="20" y1="6" y2="6"/>
+                    <line x1="4" x2="20" y1="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="shorts-container" id="shortsContainer">
+            <!-- Short cards will be dynamically loaded here -->
+            <p id="noShortcutsMessage" class="col-span-full text-center text-gray-500" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">No shortcuts added yet.</p>
+        </div>
+
+        <!-- Forgotten Button Container -->
+        <div class="forgotten-button-container">
+            <button id="forgottenButton" class="nav-button">
+                Missed Something <span id="forgottenEmoji" class="forgotten-emoji"></span>
+            </button>
+        </div>
+
+        <!-- Hamburger Menu Container -->
+        <div id="hamburgerMenuContainer">
+            <!-- Jump to a particular box section -->
+            <div class="menu-section">
+                <div class="menu-section-header" id="jumpToHeader">
+                    <span>Jump to a particular box</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right">
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </div>
+                <div class="menu-section-content" id="jumpToContent">
+                    <ul id="jumpToOptions">
+                        <!-- Jump options will be dynamically loaded here -->
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Manage Rewards Section -->
+            <div class="menu-section">
+                <div class="menu-section-header" id="manageRewardsHeader">
+                    <span>Manage Reward Links</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right">
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </div>
+                <div class="menu-section-content" id="manageRewardsContent">
+                    <div id="manageRewardsSection">
+                        <label for="rewardLinkInput">Add new reward URL:</label>
+                        <input type="url" id="rewardLinkInput" placeholder="https://youtube.com/...">
+                        <button id="addRewardLinkButton" class="button primary-button" style="width: 100%; margin-top: 0.5rem;">Add Link</button>
+                        
+                        <!--<h4 style="margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; color: #6b7280;">Current Links:</h4> -->
+                        <ul id="rewardLinksList" style="list-style: none; padding: 0; margin: 0;">
+                            <!-- Links generated here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Custom Text section -->
+            <div class="menu-section">
+                <div class="menu-section-header" id="addCustomTextHeader">
+                    <span>Add Custom Text</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right">
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </div>
+                <div class="menu-section-content" id="addCustomTextContent">
+                    <div id="customTextInputSection"> <!-- This div now contains the input elements -->
+                        <label for="textInput">Enter text to speak:</label>
+                        <textarea id="textInput"
+                                  placeholder="Enter English text here..."
+                                  lang="en"></textarea>
+                        <label for="nicknameInput">Nickname for shortcut:</label>
+                        <input type="text" id="nicknameInput"
+                               placeholder="Enter nickname here">
+                        <label for="emojiInput">Optional emoji:</label>
+                        <input type="text" id="emojiInput"
+                               placeholder="Enter emoji here (optional)">
+                        <div class="flex-row justify-center gap-4">
+                            <button id="speakButton" class="button primary-button menu-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.994 9.994 0 0119 10a9.994 9.994 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.996 7.996 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.828 2.828a1 1 0 011.414 0A5.996 5.996 0 0115 10a5.996 5.996 0 01-1.757 4.243 1 1 0 01-1.414-1.414A3.996 3.996 0 0013 10a3.996 3.996 0 00-1.172-2.828 1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                                Speak Text
+                            </button>
+                            <button id="addShortcutButton" class="button secondary-button menu-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                Add Shortcut
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Box -->
+        <div id="messageBox" class="message-box"></div>
+
+        <!-- Emoji Input Modal -->
+        <div id="emojiModal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>Add Shortcut</h3>
+                <p>Enter a nickname for the shortcut (this will be displayed on screen):</p>
+                <input type="text" id="nicknameInputModal"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 mb-4"
+                       placeholder="Enter nickname here">
+                <p class="mb-4">Add an optional emoji (e.g., 👋, 😊, 🏠):</p>
+                <input type="text" id="emojiInputModal"
+                       placeholder="Enter emoji here (optional)">
+                <div class="flex">
+                    <button id="cancelEmojiButton" class="button secondary-button">Cancel</button>
+                    <button id="saveEmojiButton" class="button primary-button">Save Shortcut</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmationModal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>Confirm Deletion</h3>
+                <p id="confirmationMessage">Are you sure you want to delete this shortcut?</p>
+                <p class="font-bold">Enter code "1468" to confirm:</p>
+                <input type="text" id="deleteCodeInput"
+                       placeholder="Enter code here">
+                <div class="flex">
+                    <button id="cancelDeleteButton" class="button secondary-button">No, Cancel</button>
+                    <button id="confirmDeleteButton" class="button confirm-delete-button" disabled>Yes, Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Easter Egg Modal -->
+        <div id="easterEggModal" class="modal-overlay">
+            <div class="modal-content">
+                <p id="basketballsDisplay"></p>
+                <div class="flex">
+                    <button id="closeEasterEggModal" class="button primary-button mt-4">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reward Modal -->
+        <div id="rewardModal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>Congratulations!</h3>
+                <p id="rewardMessage">You've earned a reward!</p>
+                <div class="flex">
+                    <button id="viewRewardButton" class="button primary-button">View Reward</button>
+                    <button id="closeRewardModal" class="button secondary-button">Close</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        window.onload = function() {
+            const textInput = document.getElementById('textInput');
+            const speakButton = document.getElementById('speakButton');
+            const addShortcutButton = document.getElementById('addShortcutButton');
+            const shortsContainer = document.getElementById('shortsContainer');
+            const messageBox = document.getElementById('messageBox');
+
+            const nicknameInputFromCustomSection = document.getElementById('nicknameInput');
+            const emojiInputFromCustomSection = document.getElementById('emojiInput');
+
+            const emojiModal = document.getElementById('emojiModal');
+            const nicknameInputModal = document.getElementById('nicknameInputModal');
+            const emojiInputModal = document.getElementById('emojiInputModal');
+            const cancelEmojiButton = document.getElementById('cancelEmojiButton');
+            const saveEmojiButton = document.getElementById('saveEmojiButton');
+
+            const confirmationModal = document.getElementById('confirmationModal');
+            const confirmationMessage = document.getElementById('confirmationMessage');
+            const deleteCodeInput = document.getElementById('deleteCodeInput');
+            const cancelDeleteButton = document.getElementById('cancelDeleteButton');
+            const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+
+            const easterEggModal = document.getElementById('easterEggModal');
+            const basketballsDisplay = document.getElementById('basketballsDisplay');
+            const closeEasterEggModal = document.getElementById('closeEasterEggModal');
+
+            const rewardModal = document.getElementById('rewardModal');
+            const rewardMessage = document.getElementById('rewardMessage');
+            const viewRewardButton = document.getElementById('viewRewardButton');
+            const closeRewardModal = document.getElementById('closeRewardModal');
+            let currentRewardLink = '';
+
+            const toggleHamburgerMenuButton = document.getElementById('toggleHamburgerMenuButton');
+            const hamburgerMenuContainer = document.getElementById('hamburgerMenuContainer');
+
+            const jumpToHeader = document.getElementById('jumpToHeader');
+            const jumpToContent = document.getElementById('jumpToContent');
+            const jumpToOptions = document.getElementById('jumpToOptions');
+
+            const manageRewardsHeader = document.getElementById('manageRewardsHeader');
+            const manageRewardsContent = document.getElementById('manageRewardsContent');
+            const rewardLinkInput = document.getElementById('rewardLinkInput');
+            const addRewardLinkButton = document.getElementById('addRewardLinkButton');
+            const rewardLinksList = document.getElementById('rewardLinksList');
+
+            const addCustomTextHeader = document.getElementById('addCustomTextHeader');
+            const addCustomTextContent = document.getElementById('addCustomTextContent');
+            const customTextInputSection = document.getElementById('customTextInputSection');
+
+            const susovonPalPlayButton = document.getElementById('susovonPalPlayButton');
+            
+            const forgottenButton = document.getElementById('forgottenButton');
+            const forgottenEmojiSpan = document.getElementById('forgottenEmoji');
+            const scoreValueDisplay = document.getElementById('scoreValue');
+
+
+            const DELETE_CODE = "1468";
+            const LOCAL_STORAGE_KEY = 'englishSpeechShortcuts';
+            const LOCAL_STORAGE_LAST_SPOKEN_ID = 'lastSpokenShortcutIdYtShorts';
+            const LOCAL_STORAGE_REWARDS_KEY = 'englishSpeechRewards';
+
+            let currentShortcutIndex = 0;
+            let isHamburgerMenuExpanded = false;
+            let isAnyEasterEggActive = false;
+            let activeEasterEggElements = [];
+            let score = 0; // Score starts at 0 and resets on reload
+            let rewardLinks = [];
+            
+            // State for deletion logic
+            let deletionType = null; // 'shortcut' or 'reward'
+            let deletionTarget = null; // ID for shortcut, Index for reward
+
+            // Map to store the display state (0: Cap-def, 1: Cap-enl, 2: Small-def, 3: Small-enl) for A-Z characters
+            let alphabetDisplayStates = new Map();
+
+            const SUSOVON_PAL_PHRASES = [
+                "পড়া করে নাও সুশোভন",
+                "কেমন আছো সুশোভন",
+                "তোমার গ্রামের নাম ছোটো সরসা",
+                "বসে বসে পড়বে শুয়ে পড়বে না যেনো",
+                "তোমার নাম সুশোভন পাল"
+            ];
+
+            const MIN_SCORE_FOR_REWARD = 25; // Minimum score required for reward
+
+            function capitalizeFirstWord(str) {
+                if (!str) return str;
+                const words = str.split(' ');
+                if (words.length > 0) {
+                    words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
+                }
+                return words.join(' ');
+            }
+
+            function bengaliToEnglishDigit(bengaliNum) {
+                const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+                const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+                let englishNum = '';
+                for (let i = 0; i < bengaliNum.length; i++) {
+                    const index = bengaliDigits.indexOf(bengaliNum[i]);
+                    if (index !== -1) {
+                        englishNum += englishDigits[index];
+                    } else {
+                        englishNum += bengaliNum[i];
+                    }
+                }
+                return englishNum;
+            }
+
+            const ENLARGEABLE_NICKNAMES = new Set();
+            
+            const ANIMAL_EMOJIS = new Set([
+                '🐈', '🐠', '🐐', '🦁', '🐖', '🐇', '🐃', '🦓',
+                '👶', '🦋'
+            ]);
+            
+            const ALL_USED_EMOJIS = new Set();
+
+            let initialDefaultShortcuts = [];
+
+            const alphabetData = [
+                { char: 'A', emoji: '🍎', rhyme: 'Apple' },
+                { char: 'B', emoji: '🏀', rhyme: 'Ball' },
+                { char: 'C', emoji: '🐈', rhyme: 'Cat' },
+                { char: 'D', emoji: '🎎', rhyme: 'Doll' },
+                { char: 'E', emoji: '🥚', rhyme: 'Egg' },
+                { char: 'F', emoji: '🐠', rhyme: 'Fish' },
+                { char: 'G', emoji: '🐐', rhyme: 'Goat' },
+                { char: 'H', emoji: '🎩', rhyme: 'Hat' },
+                { char: 'I', emoji: '☃️', rhyme: 'Ice' },
+                { char: 'J', emoji: '🍓', rhyme: 'Jam', easterEgg: 'rain' },
+                { char: 'K', emoji: '♦️', rhyme: 'Kite' },
+                { char: 'L', emoji: '🦁', rhyme: 'Lion' },
+                { char: 'M', emoji: '🌕', rhyme: 'Moon' },
+                { char: 'N', emoji: '巢', rhyme: 'Nest' },
+                { char: 'O', emoji: '🍊', rhyme: 'Orange' },
+                { char: 'P', emoji: '🐖', rhyme: 'Pig' },
+                { char: 'Q', emoji: '👑', rhyme: 'Queen' },
+                { char: 'R', emoji: '🐇', rhyme: 'Rabbit' },
+                { char: 'S', emoji: '☀️', rhyme: 'Sun' },
+                { char: 'T', emoji: '🌳', rhyme: 'Tree', easterEgg: 'dance' },
+                { char: 'U', emoji: '☂️', rhyme: 'Umbrella' },
+                { char: 'V', emoji: '🏺', rhyme: 'Vase' },
+                { char: 'W', emoji: '⌚', rhyme: 'Watch' },
+                { char: 'X', emoji: '🎼', rhyme: 'Xylophone' },
+                { char: 'Y', emoji: '🐃', rhyme: 'Yak' },
+                { char: 'Z', emoji: '🦓', rhyme: 'Zebra', easterEgg: null }
+            ];
+
+            alphabetData.forEach(data => {
+                initialDefaultShortcuts.push({
+                    id: `${data.char}-${data.char}`,
+                    text: data.char,
+                    nickname: data.char, // Changed to just the capital letter
+                    emoji: data.emoji,
+                    isDefault: true,
+                    isEasterEggReady: false,
+                    isMainAudioPlayed: false,
+                    isRhymeAudioPlayed: false,
+                    isAudioPlayedForCurrentCard: false,
+                    rhyme: data.rhyme,
+                    easterEgg: data.easterEgg || null
+                });
+                ENLARGEABLE_NICKNAMES.add(data.char);
+            });
+
+            const preLoadedAfterZ = [
+                { text: 'Susovan', nickname: 'Susovan', emoji: '👶' },
+                { text: 'Fan', nickname: 'Fan', emoji: '🌀' },
+                { text: 'Butterfly', nickname: 'Butterfly', emoji: '🦋' },
+                { text: 'Pants', nickname: 'Pants', emoji: '👖' },
+                { text: 'Table', nickname: 'Table', emoji: '⬜' },
+                { text: 'Chair', nickname: 'Chair', emoji: '💺' },
+                { text: 'TV', nickname: 'TV', emoji: '📺' },
+                { text: 'Phone', nickname: 'Phone', emoji: '📱' },
+                { text: 'Laptop', nickname: 'Laptop', emoji: '💻' },
+                { text: 'Wow', nickname: 'Wow', emoji: '😲', easterEgg: 'global_crawl' }
+            ];
+            preLoadedAfterZ.forEach(data => {
+                const nickname = data.nickname;
+                initialDefaultShortcuts.push({
+                    id: `${data.nickname}-${data.nickname}`,
+                    text: data.text,
+                    nickname: data.nickname,
+                    emoji: data.emoji,
+                    isDefault: true,
+                    isEasterEggReady: false,
+                    isMainAudioPlayed: false,
+                    isRhymeAudioPlayed: false,
+                    isAudioPlayedForCurrentCard: false,
+                    rhyme: data.rhyme ? capitalizeFirstWord(data.rhyme) : null,
+                    easterEgg: data.easterEgg || null
+                });
+                ENLARGEABLE_NICKNAMES.add(nickname);
+            });
+
+            const newCustomShortcuts = [
+                { text: 'remote', nickname: 'Remote', emoji: '*️⃣' },
+                { text: 'tractor', nickname: 'Tractor', emoji: '🚜' },
+                { text: 'current', nickname: 'Current', emoji: '⚡' },
+                { text: 'light', nickname: 'Light', emoji: '🔆' },
+                { text: 'torch', nickname: 'Torch', emoji: '🔦' }
+            ];
+            newCustomShortcuts.forEach(data => {
+                const nickname = data.nickname;
+                initialDefaultShortcuts.push({
+                    id: `${data.nickname}-${data.nickname}`,
+                    text: data.text,
+                    nickname: data.nickname,
+                    emoji: data.emoji,
+                    isDefault: true,
+                    isEasterEggReady: false,
+                    isMainAudioPlayed: false,
+                    isRhymeAudioPlayed: false,
+                    isAudioPlayedForCurrentCard: false,
+                    rhyme: data.rhyme ? capitalizeFirstWord(data.rhyme) : null,
+                    easterEgg: null
+                });
+                ENLARGEABLE_NICKNAMES.add(nickname);
+            });
+
+            for (let i = 1; i <= 10; i++) {
+                const nickname = `${i}`;
+                initialDefaultShortcuts.push({
+                    id: `${i}-${i}`,
+                    text: `${i}`,
+                    nickname: nickname,
+                    emoji: ' #️⃣',
+                    isDefault: true,
+                    isEasterEggReady: false,
+                    isMainAudioPlayed: false,
+                    isRhymeAudioPlayed: false,
+                    isAudioPlayedForCurrentCard: false,
+                    rhyme: null
+                });
+                ENLARGEABLE_NICKNAMES.add(nickname);
+            }
+
+            const tataByeByeNickname = 'Ta ta bye bye';
+            initialDefaultShortcuts.push({
+                id: 'Ta ta bye bye-Ta ta bye bye',
+                text: 'Ta ta bye bye',
+                nickname: tataByeByeNickname,
+                emoji: '👋🏽',
+                isDefault: true,
+                isEasterEggReady: false,
+                isMainAudioPlayed: false,
+                isRhymeAudioPlayed: false,
+                isAudioPlayedForCurrentCard: false,
+                rhyme: null,
+                isRewardCard: true // Flag indicating this card triggers a reward
+            });
+
+            initialDefaultShortcuts.forEach(s => {
+                if (s.emoji) {
+                    ALL_USED_EMOJIS.add(s.emoji.trim());
+                }
+            });
+
+
+            let shortcuts = [];
+            let shortcutToDeleteId = null; // Keeping this for backward compatibility in code structure, but using deletionTarget now
+            let lastSpokenShortcutId = localStorage.getItem(LOCAL_STORAGE_LAST_SPOKEN_ID);
+
+
+            // --- Local Storage Functions ---
+            function saveShortcuts() {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(shortcuts.map(s => {
+                    const { isAudioPlayedForCurrentCard, ...rest } = s; // Don't save transient state
+                    return rest;
+                })));
+            }
+
+            function loadShortcuts() {
+                const storedShortcuts = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (storedShortcuts) {
+                    try {
+                        const parsedShortcuts = JSON.parse(storedShortcuts);
+                        const storedMap = new Map(parsedShortcuts.map(s => [s.id, s]));
+
+                        const mergedShortcuts = initialDefaultShortcuts.map(defaultItem => {
+                            const stored = storedMap.get(defaultItem.id);
+                            return stored ? {
+                                ...defaultItem,
+                                isEasterEggReady: stored.isEasterEggReady || false,
+                                isMainAudioPlayed: stored.isMainAudioPlayed || (stored.isEasterEggReady ? true : false),
+                                isRhymeAudioPlayed: stored.isRhymeAudioPlayed || (stored.isEasterEggReady ? true : false),
+                                isAudioPlayedForCurrentCard: false, // Always reset on load for current session
+                                rhyme: stored.rhyme !== undefined ? stored.rhyme : defaultItem.rhyme,
+                                isRewardCard: defaultItem.isRewardCard || false, // Ensure this flag comes from default
+                                easterEgg: stored.easterEgg !== undefined ? stored.easterEgg : defaultItem.easterEgg
+                            } : defaultItem;
+                        });
+
+                        parsedShortcuts.forEach(storedItem => {
+                            if (!initialDefaultShortcuts.some(defaultItem => defaultItem.id === storedItem.id)) {
+                                mergedShortcuts.push({
+                                    ...storedItem,
+                                    isDefault: false,
+                                    isEasterEggReady: storedItem.isEasterEggReady || false,
+                                    isMainAudioPlayed: storedItem.isMainAudioPlayed || (storedItem.isEasterEggReady ? true : false),
+                                    isRhymeAudioPlayed: storedItem.isRhymeAudioPlayed || (storedItem.isEasterEggReady ? true : false),
+                                    isAudioPlayedForCurrentCard: false, // Always reset on load for current session
+                                    rhyme: storedItem.rhyme !== undefined ? storedItem.rhyme : null,
+                                    isRewardCard: storedItem.isRewardCard || false,
+                                    easterEgg: storedItem.easterEgg !== undefined ? storedItem.easterEgg : null
+                                });
+                            }
+                        });
+                        shortcuts = mergedShortcuts;
+                    } catch (e) {
+                        console.error("Error parsing shortcuts from local storage, loading defaults.", e);
+                        shortcuts = JSON.parse(JSON.stringify(initialDefaultShortcuts.map(s => ({...s, isAudioPlayedForCurrentCard: false}))));
+                    }
+                } else {
+                    shortcuts = JSON.parse(JSON.stringify(initialDefaultShortcuts.map(s => ({...s, isAudioPlayedForCurrentCard: false}))));
+                }
+
+                score = 0;
+                updateScoreDisplay();
+            }
+            
+            function saveRewards() {
+                localStorage.setItem(LOCAL_STORAGE_REWARDS_KEY, JSON.stringify(rewardLinks));
+            }
+            
+            function loadRewards() {
+                const storedRewards = localStorage.getItem(LOCAL_STORAGE_REWARDS_KEY);
+                if (storedRewards) {
+                    try {
+                        rewardLinks = JSON.parse(storedRewards);
+                        if (!Array.isArray(rewardLinks)) {
+                            rewardLinks = [];
+                        }
+                    } catch (e) {
+                        console.error("Error parsing reward links, resetting to empty.", e);
+                        rewardLinks = [];
+                    }
+                } else {
+                    rewardLinks = [];
+                }
+                renderRewardLinksList();
+            }
+
+            // --- Utility Functions ---
+            function showMessage(message, type = 'success') {
+                messageBox.textContent = message;
+                messageBox.className = 'message-box show';
+                if (type === 'error') {
+                    messageBox.style.backgroundColor = '#f44336';
+                } else {
+                    messageBox.style.backgroundColor = '#4CAF50';
+                }
+                setTimeout(() => {
+                    messageBox.classList.remove('show');
+                }, 3000);
+            }
+
+            function updateScoreDisplay() {
+                scoreValueDisplay.textContent = score;
+            }
+
+            function speakText(text, shortcutId = null, isRhyme = false, language = 'en-IN') {
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel(); 
+
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = language;
+
+                    const voices = speechSynthesis.getVoices();
+                    let targetVoice = voices.find(voice => voice.lang === language);
+
+                    if (!targetVoice) {
+                        if (language.startsWith('en')) {
+                            targetVoice = voices.find(voice => voice.lang.startsWith('en'));
+                        } else if (language.startsWith('bn')) {
+                            targetVoice = voices.find(voice => voice.lang.startsWith('bn'));
+                        }
+                    }
+
+                    if (targetVoice) {
+                        utterance.voice = targetVoice;
+                    } else {
+                        console.warn(`Voice for ${language} not found, using default.`);
+                    }
+
+                    utterance.onend = () => {
+                        const spokenShortcut = shortcuts.find(s => s.id === shortcutId);
+
+                        if (spokenShortcut) {
+                            if (!isRhyme) {
+                                score++; // +1 for main text
+                                spokenShortcut.isMainAudioPlayed = true;
+                                spokenShortcut.isAudioPlayedForCurrentCard = true; // Mark as played
+                                lastSpokenShortcutId = spokenShortcut.id; // Update last spoken ID
+                                localStorage.setItem(LOCAL_STORAGE_LAST_SPOKEN_ID, spokenShortcut.id);
+                                updateForgottenButtonGlow(); // Update glow after speaking
+
+                                if (spokenShortcut.isRewardCard) {
+                                    if (score >= MIN_SCORE_FOR_REWARD) {
+                                        if (rewardLinks.length > 0) {
+                                            const randomIndex = Math.floor(Math.random() * rewardLinks.length);
+                                            const rewardLinkToOpen = rewardLinks[randomIndex];
+                                            showRewardModal(rewardLinkToOpen);
+                                        } else {
+                                            showMessage("No reward links added yet. Please add them in the menu.", 'error');
+                                        }
+                                    } else {
+                                        rewardMessage.textContent = `Score ${MIN_SCORE_FOR_REWARD} or more to unlock this reward! Current score: ${score}`;
+                                        showRewardModal(null); // Show modal but disable view reward button
+                                    }
+                                }
+                            } else {
+                                score++; // +1 for rhyme
+                                spokenShortcut.isRhymeAudioPlayed = true;
+                            }
+
+                            // Update isEasterEggReady: Must play both if rhyme exists
+                            if (spokenShortcut.rhyme) {
+                                spokenShortcut.isEasterEggReady = spokenShortcut.isMainAudioPlayed && spokenShortcut.isRhymeAudioPlayed;
+                            } else {
+                                spokenShortcut.isEasterEggReady = spokenShortcut.isMainAudioPlayed;
+                            }
+                        }
+                        updateScoreDisplay(); // Update score display
+                        saveShortcuts(); // Save shortcuts (but not score) after each update
+                        renderShortcuts(); // Re-render to update button state
+                    };
+                    utterance.onerror = (event) => {
+                        console.error("SpeechSynthesisUtterance error:", event.error);
+                    };
+
+                    speechSynthesis.speak(utterance);
+                } else {
+                    showMessage("Text-to-speech not supported in this browser.", 'error');
+                    console.error("SpeechSynthesis API not supported.");
+                }
+            }
+
+            // --- UI Creation and Event Handlers ---
+            function createShortCard(shortcut) {
+                const shortCard = document.createElement('div');
+                shortCard.className = 'short-card';
+                shortCard.dataset.id = shortcut.id;
+
+                const emojiSpan = document.createElement('span');
+                emojiSpan.className = 'emoji';
+                if (shortcut.emoji) {
+                    emojiSpan.textContent = shortcut.emoji;
+                    if (shortcut.isDefault && shortcut.nickname.match(/^\d+$/)) {
+                        emojiSpan.classList.add('clickable');
+                        emojiSpan.addEventListener('click', (event) => {
+                            event.stopPropagation();
+                            const num = parseInt(shortcut.nickname, 10);
+                            if (!isNaN(num)) {
+                                showEasterEggModal(num);
+                            }
+                        });
+                    }
+                    if (ANIMAL_EMOJIS.has(shortcut.emoji.trim())) {
+                        emojiSpan.classList.add('clickable');
+                        if (shortcut.isEasterEggReady && !isAnyEasterEggActive) {
+                            emojiSpan.classList.add('glowing-emoji');
+                            emojiSpan.style.opacity = '1';
+                            emojiSpan.style.cursor = 'pointer';
+                        } else if (isAnyEasterEggActive) {
+                            emojiSpan.style.opacity = '0.5';
+                            emojiSpan.style.cursor = 'not-allowed';
+                            emojiSpan.classList.remove('glowing-emoji');
+                        } else {
+                            emojiSpan.style.opacity = '1';
+                            emojiSpan.style.cursor = 'pointer';
+                            emojiSpan.classList.remove('glowing-emoji');
+                        }
+                        emojiSpan.addEventListener('click', (event) => {
+                            event.stopPropagation();
+                            if (shortcut.isEasterEggReady && !isAnyEasterEggActive) {
+                                startIndividualEmojiCrawl(shortcut.id, shortcut.emoji.trim());
+                            } else if (isAnyEasterEggActive) {
+                                showMessage("Other emoji animations are active!", 'error');
+                            } else {
+                                if (shortcut.rhyme && (!shortcut.isMainAudioPlayed || !shortcut.isRhymeAudioPlayed)) {
+                                     showMessage("Play both the letter/word and the rhyme to activate this emoji!", 'error');
+                                } else {
+                                     showMessage("Play the audio to activate this emoji!", 'error');
+                                }
+                            }
+                        });
+                    }
+                }
+                shortCard.appendChild(emojiSpan);
+
+                const nicknameDisplay = document.createElement('p');
+                nicknameDisplay.className = 'nickname-display';
+                
+                // Initialize text content based on the A-Z cycle state or default nickname
+                if (shortcut.isDefault && shortcut.text.length === 1 && shortcut.text.match(/[A-Z]/)) {
+                    const currentId = shortcut.id;
+                    const currentState = alphabetDisplayStates.get(currentId) || 0;
+                    if (currentState === 0 || currentState === 1) {
+                        nicknameDisplay.textContent = shortcut.nickname; // Capital letter
+                    } else {
+                        nicknameDisplay.textContent = shortcut.nickname.toLowerCase(); // Small letter
+                    }
+                    if (currentState === 1 || currentState === 3) {
+                        nicknameDisplay.classList.add('enlarged-nickname');
+                    }
+                } else {
+                    nicknameDisplay.textContent = shortcut.nickname;
+                }
+                
+
+                // A-Z specific enlargement cycle logic
+                if (shortcut.isDefault && shortcut.text.length === 1 && shortcut.text.match(/[A-Z]/)) {
+                    nicknameDisplay.style.cursor = 'pointer';
+                    nicknameDisplay.addEventListener('click', (event) => {
+                        const currentId = shortcut.id;
+                        let currentState = alphabetDisplayStates.get(currentId) || 0; // Get current state, default to 0
+
+                        currentState = (currentState + 1) % 4; // Cycle through 0, 1, 2, 3
+
+                        // Update text content based on new state
+                        if (currentState === 0 || currentState === 1) {
+                            event.target.textContent = shortcut.nickname; // Capital letter (e.g., 'A')
+                        } else {
+                            event.target.textContent = shortcut.nickname.toLowerCase(); // Small letter (e.g., 'a')
+                        }
+
+                        // Toggle enlargement class based on new state
+                        if (currentState === 1 || currentState === 3) {
+                            event.target.classList.add('enlarged-nickname');
+                        } else {
+                            event.target.classList.remove('enlarged-nickname');
+                        }
+
+                        alphabetDisplayStates.set(currentId, currentState); // Store new state
+                    });
+                } else {
+                    // For non A-Z shortcuts, keep existing enlargement logic
+                    nicknameDisplay.style.cursor = 'pointer';
+                    nicknameDisplay.addEventListener('click', (event) => {
+                        event.target.classList.toggle('enlarged-nickname');
+                    });
+                }
+                shortCard.appendChild(nicknameDisplay);
+
+                if (shortcut.rhyme) {
+                    const rhymeDisplay = document.createElement('p');
+                    rhymeDisplay.className = 'rhyme-display';
+                    rhymeDisplay.textContent = shortcut.rhyme;
+                    shortCard.appendChild(rhymeDisplay);
+                }
+
+                // Button Group for Play and Rhyme
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'button-group';
+
+                const playIcon = document.createElement('div');
+                playIcon.className = 'play-icon';
+                playIcon.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                `;
+                playIcon.addEventListener('click', () => {
+                    speechSynthesis.cancel();
+                    speakText(shortcut.text, shortcut.id);
+                });
+                buttonGroup.appendChild(playIcon);
+
+                // Individual Rhyme Button
+                if (shortcut.rhyme) {
+                    const rhymeButton = document.createElement('button');
+                    rhymeButton.className = 'button secondary-button'; /* Use secondary button styling */
+                    rhymeButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.994 9.994 0 0119 10a9.994 9.994 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.996 7.996 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.828 2.828a1 1 0 011.414 0A5.996 5.996 0 0115 10a5.996 5.996 0 01-1.757 4.243 1 1 0 01-1.414-1.414A3.996 3.996 0 0013 10a3.996 3.996 0 00-1.172-2.828 1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        Play Rhyme
+                    `;
+                    rhymeButton.addEventListener('click', () => {
+                        speechSynthesis.cancel();
+                        speakText(shortcut.rhyme, shortcut.id, true, 'en-IN');
+                    });
+                    buttonGroup.appendChild(rhymeButton);
+                }
+                
+                const dotMenuContainer = document.createElement('div');
+                dotMenuContainer.className = 'dot-menu-container';
+                
+                const dotMenuButton = document.createElement('button');
+                dotMenuButton.className = 'dot-menu-button';
+                dotMenuButton.innerHTML = '⋮';
+                dotMenuButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    document.querySelectorAll('.dot-menu-dropdown.show').forEach(menu => {
+                        if (menu !== dotMenuDropdown) {
+                            menu.classList.remove('show');
+                        }
+                    });
+                    dotMenuDropdown.classList.toggle('show');
+                });
+                dotMenuContainer.appendChild(dotMenuButton);
+
+                const dotMenuDropdown = document.createElement('div');
+                dotMenuDropdown.className = 'dot-menu-dropdown';
+
+                if (shortcut.easterEgg) {
+                    const easterEggButton = document.createElement('button');
+                    easterEggButton.textContent = `Activate ${shortcut.easterEgg.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+                    easterEggButton.disabled = isAnyEasterEggActive || !shortcut.isEasterEggReady;
+                    easterEggButton.addEventListener('click', () => {
+                        if (!isAnyEasterEggActive && shortcut.isEasterEggReady) {
+                            if (shortcut.easterEgg === 'rain') {
+                                startVerticalEmojiRain(shortcut.id);
+                            } else if (shortcut.easterEgg === 'dance') {
+                                startEmojiDance(shortcut.id);
+                            } else if (shortcut.easterEgg === 'global_crawl') {
+                                startGlobalEmojiCrawl(shortcut.id);
+                            }
+                        } else if (isAnyEasterEggActive) {
+                            showMessage("Other emoji animations are active!", 'error');
+                        } else if (!shortcut.isEasterEggReady) {
+                            if (shortcut.rhyme && (!shortcut.isMainAudioPlayed || !shortcut.isRhymeAudioPlayed)) {
+                                 showMessage(`Play both the letter/word and the rhyme to activate the ${shortcut.easterEgg.replace('_', ' ')}!`, 'error');
+                            } else {
+                                 showMessage(`Play the main audio for this shortcut first to activate the ${shortcut.easterEgg.replace('_', ' ')}!`, 'error');
+                            }
+                        }
+                        dotMenuDropdown.classList.remove('show');
+                    });
+                    dotMenuDropdown.appendChild(easterEggButton);
+                }
+
+                if (!shortcut.isDefault) {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'delete-option';
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.addEventListener('click', () => {
+                        showConfirmationModal('shortcut', shortcut.id);
+                        dotMenuDropdown.classList.remove('show');
+                    });
+                    dotMenuDropdown.appendChild(deleteButton);
+                }
+
+                dotMenuContainer.appendChild(dotMenuDropdown);
+                buttonGroup.appendChild(dotMenuContainer);
+
+                shortCard.appendChild(buttonGroup);
+
+
+                const isEasterEggAvailableForThisShortcut = shortcut.easterEgg;
+
+                if (isEasterEggAvailableForThisShortcut && shortcut.isEasterEggReady && !isAnyEasterEggActive) {
+                    dotMenuButton.classList.add('glowing');
+                } else {
+                    dotMenuButton.classList.remove('glowing');
+                }
+
+                return shortCard;
+            }
+
+            // --- Navigation Functions ---
+            function renderAllShortcuts() {
+                shortsContainer.innerHTML = '';
+                if (shortcuts.length === 0) {
+                    shortsContainer.innerHTML = `<p id="noShortcutsMessage" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; text-align: center; color: #6b7280;">No shortcuts added yet.</p>`;
+                    return;
+                }
+                shortcuts.forEach(shortcut => {
+                    const card = createShortCard(shortcut);
+                    shortsContainer.appendChild(card);
+                });
+                observeShortCards();
+                renderJumpToMenu();
+                updateForgottenButtonGlow();
+            }
+
+            function scrollToShortcut(index) {
+                if (shortcuts.length === 0) return;
+
+                if (index < 0) index = 0;
+                if (index >= shortcuts.length) index = shortcuts.length - 1;
+
+                currentShortcutIndex = index;
+                const targetCard = shortsContainer.children[currentShortcutIndex];
+                if (targetCard) {
+                    targetCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                updateForgottenButtonGlow();
+            }
+
+            let observer;
+            let lastIntersectedShortcutId = null;
+
+            function observeShortCards() {
+                if (observer) {
+                    observer.disconnect();
+                }
+
+                observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && entry.intersectionRatio >= 0.95) {
+                            const visibleShortcutId = entry.target.dataset.id;
+                            const visibleShortcutIndex = shortcuts.findIndex(s => s.id === visibleShortcutId);
+
+                            if (visibleShortcutIndex !== -1 && visibleShortcutId !== lastIntersectedShortcutId) {
+                                currentShortcutIndex = visibleShortcutIndex;
+                                lastIntersectedShortcutId = visibleShortcutId;
+                                updateForgottenButtonGlow();
+                            }
+                        }
+                    });
+                }, { threshold: 0.95 });
+
+                document.querySelectorAll('.short-card').forEach(card => {
+                    observer.observe(card);
+                });
+            }
+
+            function updateForgottenButtonGlow() {
+                forgottenButton.classList.remove('glow-red');
+                forgottenEmojiSpan.textContent = '';
+
+                if (!lastSpokenShortcutId || shortcuts.length === 0) {
+                    return;
+                }
+
+                const lastSpokenIndex = shortcuts.findIndex(s => s.id === lastSpokenShortcutId);
+                if (lastSpokenIndex === -1) {
+                    return;
+                }
+
+                const expectedNextIndex = (lastSpokenIndex + 1) % shortcuts.length;
+                
+                if (currentShortcutIndex !== expectedNextIndex && currentShortcutIndex !== lastSpokenIndex) {
+                    forgottenButton.classList.add('glow-red');
+                    forgottenEmojiSpan.textContent = '😾';
+                }
+            }
+            
+            // --- Reward Link Functions ---
+            function renderRewardLinksList() {
+                rewardLinksList.innerHTML = '';
+                if (rewardLinks.length === 0) {
+                    const emptyMsg = document.createElement('li');
+                    //emptyMsg.textContent = "No links added yet.";
+                    emptyMsg.style.color = "#9ca3af";
+                    emptyMsg.style.justifyContent = "center";
+                    rewardLinksList.appendChild(emptyMsg);
+                    return;
+                }
+                
+                rewardLinks.forEach((link, index) => {
+                    const li = document.createElement('li');
+                    
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = link;
+                    textSpan.title = link; // Tooltip for full link
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"/>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                        </svg>
+                    `;
+                    deleteBtn.addEventListener('click', () => {
+                        showConfirmationModal('reward', index);
+                    });
+                    
+                    li.appendChild(textSpan);
+                    li.appendChild(deleteBtn);
+                    rewardLinksList.appendChild(li);
+                });
+            }
+            
+            addRewardLinkButton.addEventListener('click', () => {
+                const url = rewardLinkInput.value.trim();
+                if (url) {
+                    // Basic URL validation
+                    try {
+                        new URL(url); // Will throw if invalid
+                        rewardLinks.push(url);
+                        saveRewards();
+                        renderRewardLinksList();
+                        rewardLinkInput.value = '';
+                        showMessage("Reward link added!");
+                    } catch (_) {
+                         showMessage("Please enter a valid URL (e.g., https://youtube.com/...)", 'error');
+                    }
+                } else {
+                    showMessage("Please enter a URL.", 'error');
+                }
+            });
+
+            // --- Modal Functions ---
+            function showEmojiModal() {
+                nicknameInputModal.value = textInput.value.trim().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                emojiInputModal.value = '';
+                emojiModal.classList.add('show');
+                nicknameInputModal.focus();
+            }
+
+            function hideEmojiModal() {
+                emojiModal.classList.remove('show');
+            }
+
+            function showConfirmationModal(type, target) {
+                deletionType = type;
+                deletionTarget = target;
+                
+                if (type === 'shortcut') {
+                    const shortcut = shortcuts.find(s => s.id === target);
+                    if (shortcut) {
+                        confirmationMessage.textContent = `Are you sure you want to delete "${shortcut.nickname}"?`;
+                    }
+                } else if (type === 'reward') {
+                    const link = rewardLinks[target];
+                    confirmationMessage.textContent = `Are you sure you want to delete the reward link "${link}"?`;
+                }
+
+                deleteCodeInput.value = '';
+                confirmDeleteButton.disabled = true;
+                confirmationModal.classList.add('show');
+                deleteCodeInput.focus();
+            }
+
+            function hideConfirmationModal() {
+                confirmationModal.classList.remove('show');
+                deletionType = null;
+                deletionTarget = null;
+                deleteCodeInput.value = '';
+                confirmDeleteButton.disabled = true;
+            }
+
+            function showEasterEggModal(count) {
+                let basketballs = '🏀'.repeat(count);
+                basketballsDisplay.textContent = basketballs;
+                easterEggModal.classList.add('show');
+            }
+
+            function hideEasterEggModal() {
+                easterEggModal.classList.remove('show');
+                basketballsDisplay.textContent = '';
+            }
+
+            function showRewardModal(link) {
+                currentRewardLink = link;
+                if (link === null) {
+                    viewRewardButton.disabled = true;
+                    viewRewardButton.style.opacity = '0.6';
+                    viewRewardButton.style.cursor = 'not-allowed';
+                } else {
+                    viewRewardButton.disabled = false;
+                    viewRewardButton.style.opacity = '1';
+                    viewRewardButton.style.cursor = 'pointer';
+                }
+                rewardModal.classList.add('show');
+            }
+
+            function hideRewardModal() {
+                rewardModal.classList.remove('show');
+                currentRewardLink = '';
+            }
+
+            // --- Hamburger Menu Toggle Function ---
+            function toggleHamburgerMenu() {
+                isHamburgerMenuExpanded = !isHamburgerMenuExpanded;
+                if (isHamburgerMenuExpanded) {
+                    hamburgerMenuContainer.classList.add('show');
+                    toggleHamburgerMenuButton.innerHTML = `
+                        <!-- X icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                        </svg>
+                    `;
+                    setTimeout(() => {
+                        document.addEventListener('click', handleDocumentClickOutsideMenu);
+                    }, 100);
+                } else {
+                    jumpToContent.classList.remove('expanded');
+                    jumpToHeader.classList.remove('expanded');
+                    addCustomTextContent.classList.remove('expanded');
+                    addCustomTextHeader.classList.remove('expanded');
+                    manageRewardsContent.classList.remove('expanded');
+                    manageRewardsHeader.classList.remove('expanded');
+
+                    hamburgerMenuContainer.classList.remove('show');
+                    toggleHamburgerMenuButton.innerHTML = `
+                        <!-- Hamburger menu icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu">
+                            <line x1="4" x2="20" y1="12" y2="12"/>
+                            <line x1="4" x2="20" y1="6" y2="6"/>
+                            <line x1="4" x2="20" y1="18" y2="18"/>
+                        </svg>
+                    `;
+                    document.removeEventListener('click', handleDocumentClickOutsideMenu);
+                }
+            }
+
+            function handleDocumentClickOutsideMenu(event) {
+                document.querySelectorAll('.dot-menu-dropdown.show').forEach(menu => {
+                    const isClickInsideMenu = menu.contains(event.target);
+                    const isClickOnButton = menu.previousElementSibling && menu.previousElementSibling.contains(event.target);
+                    if (!isClickInsideMenu && !isClickOnButton) {
+                        menu.classList.remove('show');
+                    }
+                });
+
+                const isClickInsideHamburgerMenu = hamburgerMenuContainer.contains(event.target);
+                const isClickOnHamburgerButton = toggleHamburgerMenuButton.contains(event.target);
+                if (isHamburgerMenuExpanded && !isClickInsideHamburgerMenu && !isClickOnHamburgerButton) {
+                    toggleHamburgerMenu();
+                }
+            }
+
+            function renderJumpToMenu() {
+                jumpToOptions.innerHTML = '';
+                shortcuts.forEach((shortcut, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = shortcut.nickname;
+                    listItem.addEventListener('click', () => {
+                        scrollToShortcut(index);
+                        toggleHamburgerMenu();
+                    });
+                    jumpToOptions.appendChild(listItem);
+                });
+            }
+
+            function toggleMenuSection(header, content) {
+                const isExpanded = content.classList.contains('expanded');
+                if (isExpanded) {
+                    content.classList.remove('expanded');
+                    header.classList.remove('expanded');
+                } else {
+                    document.querySelectorAll('.menu-section-content.expanded').forEach(openContent => {
+                        openContent.classList.remove('expanded');
+                        openContent.previousElementSibling.classList.remove('expanded');
+                    });
+                    content.classList.add('expanded');
+                    header.classList.add('expanded');
+                }
+            }
+
+            function renderShortcuts() {
+                renderAllShortcuts();
+            }
+
+            // --- Easter Egg Animation Functions ---
+            function cleanupEasterEggElements() {
+                activeEasterEggElements.forEach(item => {
+                    if (item.intervalId) clearInterval(item.intervalId);
+                    if (item.clone && item.clone.parentNode) item.clone.parentNode.removeChild(item.clone);
+                });
+                activeEasterEggElements = [];
+                isAnyEasterEggActive = false;
+                renderShortcuts();
+            }
+
+            const EASTER_EGG_RAIN_DURATION = 7500;
+            const EASTER_EGG_DANCE_DURATION = 5000;
+
+            function startGlobalEmojiCrawl(shortcutId) {
+                if (isAnyEasterEggActive) return;
+                const shortcut = shortcuts.find(s => s.id === shortcutId);
+                if (!shortcut || !shortcut.isEasterEggReady) {
+                    return;
+                }
+
+                isAnyEasterEggActive = true;
+                
+                const emojisToCrawl = Array.from(ALL_USED_EMOJIS);
+                
+                if (emojisToCrawl.length === 0) {
+                    showMessage("No crawling emojis available.", 'error');
+                    cleanupEasterEggElements();
+                    return;
+                }
+
+                activeEasterEggElements = [];
+                emojisToCrawl.forEach(emojiText => {
+                    const clone = document.createElement('div');
+                    clone.textContent = emojiText;
+                    clone.classList.add('easter-egg-emoji', 'crawling-clone');
+                    
+                    clone.style.left = `${Math.random() * (window.innerWidth - 100)}px`;
+                    clone.style.top = `${Math.random() * (window.innerHeight - 100)}px`;
+                    clone.style.opacity = '1';
+                    document.body.appendChild(clone);
+
+                    const intervalId = setInterval(() => {
+                        const newX = Math.random() * (window.innerWidth - clone.offsetWidth);
+                        const newY = Math.random() * (window.innerHeight - clone.offsetHeight);
+                        clone.style.left = `${newX}px`;
+                        clone.style.top = `${newY}px`;
+                    }, 1000);
+
+                    activeEasterEggElements.push({ clone, intervalId });
+                });
+                
+                setTimeout(cleanupEasterEggElements, 5000);
+            }
+
+            function startIndividualEmojiCrawl(shortcutId, emojiText) {
+                if (isAnyEasterEggActive) return;
+
+                const shortcut = shortcuts.find(s => s.id === shortcutId);
+                if (!shortcut || !shortcut.isEasterEggReady) {
+                    return;
+                }
+
+                isAnyEasterEggActive = true;
+                
+                activeEasterEggElements = [];
+                
+                const clone = document.createElement('div');
+                clone.textContent = emojiText;
+                clone.classList.add('easter-egg-emoji', 'crawling-clone');
+                
+                clone.style.left = `${Math.random() * (window.innerWidth - 100)}px`;
+                clone.style.top = `${Math.random() * (window.innerHeight - 100)}px`;
+                clone.style.opacity = '1';
+                document.body.appendChild(clone);
+
+                const intervalId = setInterval(() => {
+                    const newX = Math.random() * (window.innerWidth - clone.offsetWidth);
+                    const newY = Math.random() * (window.innerHeight - clone.offsetHeight);
+                    clone.style.left = `${newX}px`;
+                    clone.style.top = `${newY}px`;
+                }, 1000);
+
+                activeEasterEggElements.push({ clone, intervalId });
+                renderShortcuts();
+
+                setTimeout(cleanupEasterEggElements, 5000);
+            }
+
+            function startVerticalEmojiRain(shortcutId) {
+                if (isAnyEasterEggActive) return;
+                const shortcut = shortcuts.find(s => s.id === shortcutId);
+                if (!shortcut || !shortcut.isEasterEggReady) return;
+
+                isAnyEasterEggActive = true;
+                renderShortcuts();
+                
+                const emojis = Array.from(ALL_USED_EMOJIS);
+                const numEmojisToSpawn = 20;
+                let spawnedCount = 0;
+
+                const spawnInterval = setInterval(() => {
+                    if (spawnedCount >= numEmojisToSpawn) {
+                        clearInterval(spawnInterval);
+                        return;
+                    }
+
+                    const emoji = document.createElement('div');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.classList.add('easter-egg-emoji', 'vertical-rain-emoji');
+                    
+                    const startX = Math.random() * window.innerWidth;
+                    emoji.style.left = `${startX}px`;
+                    emoji.style.setProperty('--x-offset', `${(Math.random() - 0.5) * 200}px`);
+                    emoji.style.opacity = '1';
+
+                    document.body.appendChild(emoji);
+                    activeEasterEggElements.push({ clone: emoji, intervalId: null });
+
+                    spawnedCount++;
+                }, EASTER_EGG_RAIN_DURATION / numEmojisToSpawn);
+
+                setTimeout(() => {
+                    clearInterval(spawnInterval);
+                    cleanupEasterEggElements();
+                }, EASTER_EGG_RAIN_DURATION);
+            }
+
+            function startEmojiDance(shortcutId) {
+                if (isAnyEasterEggActive) return;
+                const shortcut = shortcuts.find(s => s.id === shortcutId);
+                if (!shortcut || !shortcut.isEasterEggReady) return;
+
+                isAnyEasterEggActive = true;
+                renderShortcuts();
+
+                const emojis = Array.from(ALL_USED_EMOJIS);
+                const numEmojis = 8;
+
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                const radius = 100;
+
+                for (let i = 0; i < numEmojis; i++) {
+                    const emoji = document.createElement('div');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.classList.add('easter-egg-emoji', 'dance-emoji');
+                    
+                    const angle = (i / numEmojis) * 2 * Math.PI;
+                    emoji.style.left = `${centerX + radius * Math.cos(angle) - emoji.offsetWidth / 2}px`;
+                    emoji.style.top = `${centerY + radius * Math.sin(angle) - emoji.offsetHeight / 2}px`;
+                    emoji.style.opacity = '1';
+                    
+                    document.body.appendChild(emoji);
+                    activeEasterEggElements.push({ clone: emoji, intervalId: null });
+                }
+
+                setTimeout(cleanupEasterEggElements, EASTER_EGG_DANCE_DURATION);
+            }
+
+            // --- Event Listeners ---
+            speakButton.addEventListener('click', () => {
+                const text = textInput.value.trim();
+                if (text) {
+                    speakText(text, null, false, 'en-IN'); 
+                } else {
+                    showMessage("Please enter some text to speak.", 'error');
+                }
+            });
+
+            addShortcutButton.addEventListener('click', () => {
+                const text = textInput.value.trim();
+                const nickname = nicknameInputFromCustomSection.value.trim();
+                const emoji = emojiInputFromCustomSection.value.trim();
+
+                if (text) {
+                    if (!nickname) {
+                        showMessage("Nickname cannot be empty.", 'error');
+                        return;
+                    }
+                    if (shortcuts.some(s => s.text === text && !s.isDefault)) {
+                        showMessage(`"${text}" is already a shortcut.`, 'error');
+                        textInput.value = '';
+                        nicknameInputFromCustomSection.value = '';
+                        emojiInputFromCustomSection.value = '';
+                        return;
+                    }
+                    if (shortcuts.some(s => s.nickname === nickname && !s.isDefault)) {
+                        showMessage(`A shortcut with nickname "${nickname}" already exists.`, 'error');
+                        return;
+                    }
+
+                    const newShortcut = { id: crypto.randomUUID(), text: text, nickname: nickname, emoji: emoji || null, isDefault: false, isEasterEggReady: false, isMainAudioPlayed: false, isRhymeAudioPlayed: false, isAudioPlayedForCurrentCard: false, rhyme: null };
+                    shortcuts.push(newShortcut);
+                    currentShortcutIndex = shortcuts.findIndex(s => s.id === newShortcut.id);
+                    renderShortcuts();
+                    saveShortcuts();
+                    showMessage(`"${nickname}" added as a shortcut!`);
+                    textInput.value = '';
+                    nicknameInputFromCustomSection.value = '';
+                    emojiInputFromCustomSection.value = '';
+                } else {
+                    showMessage("Please enter text in the input field to add as a shortcut.", 'error');
+                }
+            });
+
+            cancelEmojiButton.addEventListener('click', () => {
+                hideEmojiModal();
+            });
+
+            saveEmojiButton.addEventListener('click', () => {
+                const text = textInput.value.trim();
+                const nickname = nicknameInputModal.value.trim();
+                const emoji = emojiInputModal.value.trim();
+                
+                if (!nickname) {
+                    showMessage("Nickname cannot be empty.", 'error');
+                    return;
+                }
+                if (shortcuts.some(s => s.nickname === nickname && !s.isDefault)) {
+                    showMessage(`A shortcut with nickname "${nickname}" already exists.`, 'error');
+                    return;
+                }
+
+                const newShortcut = { id: crypto.randomUUID(), text: text, nickname: nickname, emoji: emoji || null, isDefault: false, isEasterEggReady: false, isMainAudioPlayed: false, isRhymeAudioPlayed: false, isAudioPlayedForCurrentCard: false, rhyme: null };
+                shortcuts.push(newShortcut);
+                currentShortcutIndex = shortcuts.findIndex(s => s.id === newShortcut.id);
+                renderShortcuts();
+                saveShortcuts();
+                showMessage(`"${nickname}" added as a shortcut!`);
+                textInput.value = '';
+                nicknameInputFromCustomSection.value = '';
+                emojiInputFromCustomSection.value = '';
+                hideEmojiModal();
+            });
+
+
+            deleteCodeInput.addEventListener('input', () => {
+                confirmDeleteButton.disabled = (deleteCodeInput.value !== DELETE_CODE);
+            });
+
+            confirmDeleteButton.addEventListener('click', () => {
+                if (deleteCodeInput.value === DELETE_CODE) {
+                    if (deletionType === 'shortcut' && deletionTarget) {
+                        const deletedIndex = shortcuts.findIndex(s => s.id === deletionTarget);
+                        shortcuts = shortcuts.filter(s => s.id !== deletionTarget);
+
+                        if (deletedIndex <= currentShortcutIndex && currentShortcutIndex > 0) {
+                            currentShortcutIndex--;
+                        }
+                        if (shortcuts.length === 0) {
+                            currentShortcutIndex = 0;
+                        } else if (currentShortcutIndex >= shortcuts.length) {
+                            currentShortcutIndex = shortcuts.length - 1;
+                        }
+
+                        renderShortcuts();
+                        saveShortcuts();
+                        showMessage(`Shortcut deleted.`);
+                    } else if (deletionType === 'reward' && deletionTarget !== null) {
+                        rewardLinks.splice(deletionTarget, 1);
+                        saveRewards();
+                        renderRewardLinksList();
+                        showMessage("Reward link deleted.");
+                    }
+                    hideConfirmationModal();
+                } else {
+                    showMessage("Incorrect code entered. Item not deleted.", 'error');
+                }
+            });
+
+            cancelDeleteButton.addEventListener('click', () => {
+                hideConfirmationModal();
+            });
+
+            closeEasterEggModal.addEventListener('click', () => {
+                hideEasterEggModal();
+            });
+
+            viewRewardButton.addEventListener('click', () => {
+                if (currentRewardLink) {
+                    window.open(currentRewardLink, '_blank');
+                    hideRewardModal();
+                }
+            });
+
+            closeRewardModal.addEventListener('click', () => {
+                hideRewardModal();
+            });
+
+            susovonPalPlayButton.addEventListener('click', () => {
+                const randomIndex = Math.floor(Math.random() * SUSOVON_PAL_PHRASES.length);
+                speakText(SUSOVON_PAL_PHRASES[randomIndex], null, false, 'bn-IN');
+            });
+
+            toggleHamburgerMenuButton.addEventListener('click', toggleHamburgerMenu);
+
+            jumpToHeader.addEventListener('click', () => {
+                toggleMenuSection(jumpToHeader, jumpToContent);
+            });
+
+            addCustomTextHeader.addEventListener('click', () => {
+                toggleMenuSection(addCustomTextHeader, addCustomTextContent);
+            });
+            
+            manageRewardsHeader.addEventListener('click', () => {
+                toggleMenuSection(manageRewardsHeader, manageRewardsContent);
+            });
+
+            forgottenButton.addEventListener('click', () => {
+                if (!lastSpokenShortcutId || shortcuts.length === 0) {
+                    showMessage("No last played shortcut found.", 'error');
+                    return;
+                }
+                const lastSpokenIndex = shortcuts.findIndex(s => s.id === lastSpokenShortcutId);
+                if (lastSpokenIndex === -1) {
+                    showMessage("Last played shortcut not found in current list.", 'error');
+                    return;
+                }
+                const expectedNextIndex = (lastSpokenIndex + 1) % shortcuts.length;
+                scrollToShortcut(expectedNextIndex);
+            });
+
+
+            // Initial setup
+            loadShortcuts();
+            loadRewards();
+            
+            const lastSpokenIdOnLoad = localStorage.getItem(LOCAL_STORAGE_LAST_SPOKEN_ID);
+            if (lastSpokenIdOnLoad) {
+                const lastIndexOnLoad = shortcuts.findIndex(s => s.id === lastSpokenIdOnLoad);
+                if (lastIndexOnLoad !== -1) {
+                    currentShortcutIndex = (lastIndexOnLoad + 1) % shortcuts.length;
+                }
+            }
+            renderShortcuts();
+            if (shortcuts.length > 0) {
+                scrollToShortcut(currentShortcutIndex);
+            }
+
+            speechSynthesis.onvoiceschanged = () => {
+                console.log("Voices changed/loaded.");
+            };
+        };
+    </script>
+</body>
+</html>
