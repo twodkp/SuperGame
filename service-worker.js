@@ -8,6 +8,7 @@ const urlsToCache = [
   './abcd.html',
   './aaee.html',
   './image.png',
+  './image0.png',
   './dile.html',
   './hungry.mp4',
   './happy.mp4',
