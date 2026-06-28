@@ -4,23 +4,14 @@ const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './monkey.html',
-  './monkey.png',
-  './ring.mp3',
-  './sound1.mp3',
-  './sound2.mp3',
-  './video1.mp4',
-  './offline-debug.html',
-  './aabb.html',
+  './cat.html',
+  './abcd.html',
   './aaee.html',
   './image.png',
-  './image0.png',
   './dile.html',
   './hungry.mp4',
   './happy.mp4',
-  './angry.mp4',
-  './eating.mp4',
-  './fish.mp4'
+  './angry.mp4'
 ];
 
 // Install event - cache all files
