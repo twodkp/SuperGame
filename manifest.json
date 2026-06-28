@@ -1,0 +1,21 @@
+{
+  "name": "সুশোভন",
+  "short_name": "সুশোভন",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#317EFB",
+  "icons": [
+    {
+      "src": "image0.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "image0.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+
+}
