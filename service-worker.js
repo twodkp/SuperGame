@@ -31,7 +31,9 @@ self.addEventListener('install', (event) => {
         );
         
         // Cache non-media files normally
-        const cacheOthers = cache.addAll(otherFiles);
+        const cacheOthers = Promise.allSettled(
+  otherFiles.map(url => cache.add(url))
+);
         
         // Cache media files with full requests
         const cacheMedia = Promise.all(
