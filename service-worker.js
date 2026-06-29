@@ -148,7 +148,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           if (event.request.destination === 'document') {
-            return caches.match('./offline-debug.html');
+            return caches.match('./index.html');
           }
         })
     );
