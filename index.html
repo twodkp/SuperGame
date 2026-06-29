@@ -470,9 +470,21 @@
                 </div>
                 <div class="modal-btns">
                     <button onclick="saveAppEdit()" class="btn-modal btn-m-save">Save</button>
-                    <button onclick="editActiveAppCode()" class="btn-modal btn-m-edit">Edit App Code</button>
+                    <button onclick="showCodeEditConfirmView()" class="btn-modal btn-m-edit">Edit App Code</button>
                     <button onclick="showDeleteConfirmView()" class="btn-modal btn-m-del">Delete</button>
                     <button onclick="closeEditModal()" class="btn-modal btn-m-cancel">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Edit Code Protection Verification View -->
+            <div id="modalCodeEditView" style="display: none;">
+                <div class="sec-box">Code: 2468</div>
+                <div class="form-item">
+                    <input type="text" id="editCodeInput" class="input-text" style="text-align:center; font-size:18px; letter-spacing:4px;" maxlength="4" placeholder="••••">
+                </div>
+                <div class="modal-btns">
+                    <button onclick="verifyAndExecuteEdit()" class="btn-modal btn-m-edit">Confirm</button>
+                    <button onclick="showEditOptionsView()" class="btn-modal btn-m-cancel">Back</button>
                 </div>
             </div>
 
@@ -794,11 +806,21 @@
         function showEditOptionsView() {
             document.getElementById('modalEditView').style.display = "block";
             document.getElementById('modalDeleteView').style.display = "none";
+            document.getElementById('modalCodeEditView').style.display = "none";
+        }
+
+        function showCodeEditConfirmView() {
+            document.getElementById('editCodeInput').value = "";
+            document.getElementById('modalEditView').style.display = "none";
+            document.getElementById('modalDeleteView').style.display = "none";
+            document.getElementById('modalCodeEditView').style.display = "block";
+            setTimeout(() => document.getElementById('editCodeInput').focus(), 50);
         }
 
         function showDeleteConfirmView() {
             document.getElementById('deleteCodeInput').value = "";
             document.getElementById('modalEditView').style.display = "none";
+            document.getElementById('modalCodeEditView').style.display = "none";
             document.getElementById('modalDeleteView').style.display = "block";
             setTimeout(() => document.getElementById('deleteCodeInput').focus(), 50);
         }
@@ -833,6 +855,18 @@
                     showToast("Saved");
                 };
             };
+        }
+
+        function verifyAndExecuteEdit() {
+            if (!activeAppKey) return;
+            const code = document.getElementById('editCodeInput').value.trim();
+
+            if (code !== "2468") {
+                showToast("Incorrect");
+                return;
+            }
+
+            editActiveAppCode();
         }
 
         function verifyAndExecuteDelete() {
