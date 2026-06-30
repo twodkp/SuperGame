@@ -121,7 +121,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             font-weight: bold;
             color: #333;
-            transition: transform 0.1s, background-color 0.2s;
+            transition: transform 0.1s, background-color 0.2s, opacity 0.3s;
             position: relative;
             z-index: 2; 
         }
@@ -144,7 +144,7 @@
             justify-content: center;
             align-items: center;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            transition: transform 0.1s;
+            transition: transform 0.1s, opacity 0.3s;
         }
         
         .fish-control-btn.plus { background: #2196F3; }
@@ -166,7 +166,7 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            transition: transform 0.1s, background-color 0.2s;
+            transition: transform 0.1s, background-color 0.2s, opacity 0.3s;
         }
 
         /* Fish Count Speaker Button (Right) */
@@ -339,6 +339,7 @@
             font-size: 2rem;
             font-weight: bold;
             color: #d32f2f;
+            background: #fff;
         }
         #play-btn svg { width: 35px; height: 35px; fill: #FF9800; margin-left: 4px; transition: opacity 0.2s; }
 
@@ -358,6 +359,38 @@
             display: none;
             z-index: 5;
         }
+        
+        @keyframes pulse-play {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7); }
+            50% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(255, 152, 0, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+        }
+        
+        .pulse-highlight {
+            animation: pulse-play 0.5s ease-in-out;
+        }
+
+        /* --- Audio Lock Styles --- */
+        body.interaction-locked .letter-item,
+        body.interaction-locked .fish-control-btn,
+        body.interaction-locked #fish-check-btn {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #f5f5f5; 
+            color: #aaa;
+            border-color: #ddd;
+        }
+        
+        body.interaction-locked .letter-item:active,
+        body.interaction-locked .fish-control-btn:active,
+        body.interaction-locked #fish-check-btn:active {
+            transform: none !important;
+            background-color: #f5f5f5 !important;
+        }
+        
+        body.interaction-locked .fish-control-btn.plus { background: #90CAF9; color: #fff; border-color: transparent; }
+        body.interaction-locked .fish-control-btn.minus { background: #EF9A9A; color: #fff; border-color: transparent; }
+        body.interaction-locked .fish-control-btn.check { background: #A5D6A7; color: #fff; border-color: transparent; }
 
         /* Settings / Gear Button */
         #settings-btn {
@@ -390,7 +423,7 @@
             flex-direction: column;
             gap: 15px;
             z-index: 60;
-            min-width: 220px;
+            min-width: 250px;
             border: 1px solid #ddd;
             animation: popUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -497,19 +530,16 @@
     <div id="effects-layer"></div>
 
     <div id="top-bar">
-        <!-- Location for Check Button (Left) -->
         <button id="fish-check-btn" class="fish-control-btn check corner-btn" onclick="handleCheckButton()" title="Check Answer">
             ✓
         </button>
 
-        <!-- Fish Count Speaker Button (Right) -->
         <button id="fish-count-btn" class="corner-btn" onclick="speakFishCount()" title="Count fishes">
             <svg viewBox="0 0 24 24">
                <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/>
             </svg>
         </button>
 
-        <!-- Center List (Letters or +/-) -->
         <ul id="letter-list"></ul>
     </div>
 
@@ -533,6 +563,15 @@
                 <div id="menu-mode-en" class="menu-mode-btn" onclick="toggleMode('en')">E</div>
                 <div id="menu-mode-bn" class="menu-mode-btn" onclick="toggleMode('bn')">ব</div>
                 <div id="menu-mode-fish" class="menu-mode-btn" onclick="toggleMode('fish')">🐟</div>
+            </div>
+        </div>
+        
+        <div class="menu-section">
+            <span class="menu-label">Custom Videos</span>
+            <div class="menu-row">
+                <input type="file" id="video-upload" multiple accept="video/*" style="display: none;" onchange="handleVideoUpload(event)">
+                <button class="menu-mode-btn" style="flex:1; font-size: 0.9rem;" onclick="triggerVideoUpload()">Upload</button>
+                <button class="menu-mode-btn" style="flex:1; font-size: 0.9rem; background: #ffebee; border-color: #ffcdd2; color: #c62828;" onclick="clearCustomVideosDB()">Clear</button>
             </div>
         </div>
     </div>
@@ -599,11 +638,123 @@
             6: 'ছয়', 7: 'সাত', 8: 'আট', 9: 'নয়', 10: 'দশ', 11: 'এগারো'
         };
 
+        // --- CUSTOM VIDEO (INDEXEDDB) HANDLING ---
+        const dbName = 'MonsterGameDB';
+        const storeName = 'videos';
+        let customVideos = { hungry: null, happy: null, angry: null };
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        db.createObjectStore(storeName);
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function loadCustomVideos() {
+            try {
+                const db = await initDB();
+                const transaction = db.transaction(storeName, 'readonly');
+                const store = transaction.objectStore(storeName);
+
+                const promises = ['hungry', 'happy', 'angry'].map(type => {
+                    return new Promise((resolve) => {
+                        const req = store.get(type);
+                        req.onsuccess = (e) => {
+                            if (e.target.result) {
+                                if (customVideos[type]) URL.revokeObjectURL(customVideos[type]);
+                                customVideos[type] = URL.createObjectURL(e.target.result);
+                            }
+                            resolve();
+                        };
+                        req.onerror = () => resolve();
+                    });
+                });
+                await Promise.all(promises);
+            } catch (err) {
+                console.error("IndexedDB load error:", err);
+            }
+        }
+
+        async function saveCustomVideo(type, file) {
+            try {
+                const db = await initDB();
+                const transaction = db.transaction(storeName, 'readwrite');
+                const store = transaction.objectStore(storeName);
+                store.put(file, type);
+                
+                if (customVideos[type]) URL.revokeObjectURL(customVideos[type]);
+                customVideos[type] = URL.createObjectURL(file);
+            } catch (err) {
+                console.error("IndexedDB save error:", err);
+            }
+        }
+
+        async function clearCustomVideosDB() {
+            if (!confirm("Are you sure you want to clear your custom videos and revert to defaults?")) return;
+            try {
+                const db = await initDB();
+                const transaction = db.transaction(storeName, 'readwrite');
+                const store = transaction.objectStore(storeName);
+                store.clear();
+                
+                ['hungry', 'happy', 'angry'].forEach(type => {
+                    if (customVideos[type]) URL.revokeObjectURL(customVideos[type]);
+                    customVideos[type] = null;
+                });
+                
+                alert("Custom videos cleared!");
+                playVideo('hungry', true);
+            } catch (err) {
+                console.error("IndexedDB clear error:", err);
+            }
+        }
+
+        function triggerVideoUpload() {
+            document.getElementById('video-upload').click();
+        }
+
+        async function handleVideoUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+
+            let uploadedCount = 0;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const name = file.name.toLowerCase();
+                
+                let type = null;
+                if (name.includes('hungry')) type = 'hungry';
+                else if (name.includes('happy')) type = 'happy';
+                else if (name.includes('angry')) type = 'angry';
+                
+                if (type) {
+                    await saveCustomVideo(type, file);
+                    uploadedCount++;
+                }
+            }
+            
+            if (uploadedCount > 0) {
+                alert(`Successfully uploaded ${uploadedCount} video(s)!`);
+                playVideo('hungry', true);
+            } else {
+                alert("No matching videos found. Please ensure files are named 'hungry', 'happy', or 'angry'.");
+            }
+            
+            event.target.value = ''; // Reset input
+        }
+
         // --- STATE ---
-        let activeModes = ['en', 'bn', 'fish']; // Default to all
+        let activeModes = ['en', 'bn', 'fish'];
         let currentModeSequenceIndex = 0; 
         let currentMode = 'bn'; 
-        let characterName = localStorage.getItem('characterName') || 'ভূত'; // Load persistent custom name on load, fallback to 'ভূত'
+        let characterName = localStorage.getItem('characterName') || 'ভূত'; 
 
         let currentDataset = bengaliData;
         let currentLetters = Object.keys(bengaliData);
@@ -613,14 +764,14 @@
         let isAnimating = false;
         let successCount = 0;
         let wrongAttempts = 0; 
-        const TARGET_WINS = 3; // Swaps modes automatically after exactly 3 wins
+        const TARGET_WINS = 3; 
         let currentUtterance = null;
         let fishCount = 0;
         let animTimeouts = []; 
+        let hasPlayedAudio = false; // NEW AUDIO LOCK STATE
         
         const videoElement = document.getElementById('totodile-video');
         
-        // Preloaded videos inside videos/ path
         const videos = { 
             hungry: 'hungry.mp4', 
             happy: 'happy.mp4', 
@@ -649,11 +800,10 @@
             }
         });
 
-        // Handle dynamic character name input
         function handleNameChange(newName) {
             const trimmed = newName.trim();
             characterName = trimmed !== '' ? trimmed : 'ভূত';
-            localStorage.setItem('characterName', characterName); // Persist name in browser local storage
+            localStorage.setItem('characterName', characterName); 
             document.title = `${characterName} Letter Game`;
         }
 
@@ -671,9 +821,7 @@
                 activeModes.push(mode);
             }
 
-            // Normalize sequence index range to avoid array out-of-bounds
             currentModeSequenceIndex = currentModeSequenceIndex % activeModes.length;
-
             updateSettingsUI();
             
             if (!activeModes.includes(currentMode)) {
@@ -684,18 +832,15 @@
         function updateSettingsUI() {
             document.querySelectorAll('.menu-mode-btn').forEach(btn => btn.classList.remove('active'));
             activeModes.forEach(mode => {
-                document.getElementById('menu-mode-' + mode).classList.add('active');
+                const el = document.getElementById('menu-mode-' + mode);
+                if (el) el.classList.add('active');
             });
         }
 
         function determineModeForRound() {
             if (activeModes.length === 0) activeModes = ['bn']; 
-            
-            // Access the mode at current pointer
             const nextMode = activeModes[currentModeSequenceIndex];
             setRoundMode(nextMode);
-            
-            // Move pointer forward for the next iteration swap
             currentModeSequenceIndex = (currentModeSequenceIndex + 1) % activeModes.length;
         }
 
@@ -718,14 +863,36 @@
             }
         }
 
-        // Set up next target item in the current active mode
+        // Audio lock UI helper methods
+        function lockInteractions() {
+            hasPlayedAudio = false;
+            document.body.classList.add('interaction-locked');
+        }
+
+        function unlockInteractions() {
+            hasPlayedAudio = true;
+            document.body.classList.remove('interaction-locked');
+        }
+
+        function checkAudioLock() {
+            if (!hasPlayedAudio) {
+                const playBtn = document.getElementById('play-btn');
+                playBtn.classList.remove('pulse-highlight');
+                void playBtn.offsetWidth; // trigger reflow
+                playBtn.classList.add('pulse-highlight'); // Flash play button to indicate it needs to be clicked
+                return false;
+            }
+            return true;
+        }
+
         function setNewQuestion() {
+            lockInteractions(); // Lock until audio is played for the new question
+            
             currentLetter = currentLetters[Math.floor(Math.random() * currentLetters.length)];
             
             if (currentMode !== 'fish') {
                 let choices = new Set();
                 choices.add(currentLetter);
-                // Dynamically present exactly 3 options instead of 5
                 while (choices.size < 3) {
                     choices.add(currentLetters[Math.floor(Math.random() * currentLetters.length)]);
                 }
@@ -766,7 +933,6 @@
             const listContainer = document.getElementById('letter-list');
             listContainer.innerHTML = '';
             
-            // Toggle visibility of Corner Buttons based on mode
             const countBtn = document.getElementById('fish-count-btn');
             const checkBtn = document.getElementById('fish-check-btn');
 
@@ -778,7 +944,6 @@
                 checkBtn.style.display = 'none';
             }
 
-            // Render Center Content
             if (currentMode === 'fish') {
                 const minusBtn = document.createElement('button');
                 minusBtn.className = 'fish-control-btn minus';
@@ -821,6 +986,8 @@
 
         function handleAddFish() {
             if (isAnimating) return;
+            if (!checkAudioLock()) return; // Audio check
+            
             const tank = document.getElementById('fish-tank');
             if (tank.children.length >= 11) return; 
 
@@ -840,13 +1007,14 @@
 
         function handleRemoveFish() {
             if (isAnimating) return;
+            if (!checkAudioLock()) return; // Audio check
+            
             const tank = document.getElementById('fish-tank');
             if (tank.lastChild) {
                 tank.removeChild(tank.lastChild);
             }
         }
 
-        // Voice output configuration
         function speakFishCount() {
             if (isAnimating) return;
             const tank = document.getElementById('fish-tank');
@@ -880,6 +1048,8 @@
 
         function handleCheckButton() {
             if (isAnimating) return; 
+            if (!checkAudioLock()) return; // Audio check
+            
             const tank = document.getElementById('fish-tank');
             const fishes = Array.from(tank.children);
             const count = fishes.length;
@@ -950,6 +1120,8 @@
 
         function handleLetterClick(e, char) {
             if (isAnimating) return; 
+            if (!checkAudioLock()) return; // Audio check
+            
             isAnimating = true;
 
             const originalLetter = e.target;
@@ -1039,7 +1211,9 @@
         }
 
         function playVideo(type, loop = false, onEndedCallback = null) {
-            const src = videos[type];
+            // Priority: IndexedDB local custom video, fallback to default videos map
+            const src = customVideos[type] || videos[type]; 
+            
             const fallback = () => {
                 document.getElementById('video-placeholder').style.display = 'flex';
                 document.getElementById('video-placeholder').textContent = `Video Error: ${type}`;
@@ -1118,10 +1292,12 @@
             utterance.onend = () => {
                 if (videoElement) videoElement.muted = false;
                 currentUtterance = null;
+                unlockInteractions(); // Audio played successfully -> Unblock interaction
             };
             utterance.onerror = () => {
                  if (videoElement) videoElement.muted = false;
                  currentUtterance = null;
+                 unlockInteractions(); // Fallback unlock in case speech synthesis errors out entirely
             };
 
             currentUtterance = utterance;
@@ -1129,9 +1305,11 @@
         }
 
         window.onload = async () => {
-            // Apply loaded persistent character name value to Settings Input field
             document.getElementById('character-name-input').value = characterName;
             handleNameChange(characterName);
+            
+            // Load custom videos from IndexedDB before initializing the UI
+            await loadCustomVideos(); 
 
             updateSettingsUI();
             init();
